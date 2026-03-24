@@ -46,3 +46,4 @@ watchverse_db
 
 # Log dosyaları
 *.log
+.env
