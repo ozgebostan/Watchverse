@@ -16,9 +16,8 @@ public abstract class BaseFrame extends JFrame {
         setLocationRelativeTo(null);
 
         BackgroundImage bg = new BackgroundImage();
-
         bg.setLayout(new BorderLayout());
-        setContentPane(bg);
+        this.setContentPane(bg);
 
         // 2. CardLayout Container
         cardLayout = new CardLayout();
