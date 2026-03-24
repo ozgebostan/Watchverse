@@ -37,3 +37,12 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# SQLite ve Veritabanı Dosyaları
+*.db
+*.sqlite
+*.sqlite3
+watchverse_db
+
+# Log dosyaları
+*.log
