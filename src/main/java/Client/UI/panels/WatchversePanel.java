@@ -1,0 +1,503 @@
+package Client.UI.panels;
+
+import Client.Network.SocketManager;
+import Client.UI.dialogs.AddMovieToListDialog;
+import Client.UI.dialogs.AddWatchlist;
+import Client.UI.frames.WatchverseFrame;
+import Client.UI.utils.UIBehavior;
+import Client.UI.utils.UIConstants;
+import Client.UI.dialogs.AddGroup;
+import Model.ClientUserSession;
+import Model.Item;
+import Model.PublicWatchlist;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.List;
+import java.util.Comparator;
+
+public class WatchversePanel extends JPanel {
+    private String currentViewedListName;
+    private int currentViewedListId = -1;
+
+    private JLabel welcomeLabel;
+    private JTextField searchBar, discoverSearchBar;
+    private JButton profileButton;
+    private JList<String> watchlists, groups;
+    private DefaultListModel<String> watchlistModel, groupModel;
+
+    private JList<PublicWatchlist> publicWatchlists;
+    private DefaultListModel<PublicWatchlist> publicListModel;
+
+    private JPanel centerPanel, centerScreen, eastPanel;
+    private CardLayout centerLayout, eastLayout;
+    private JLabel detailPoster, detailTitle, detailGenre;
+    private JButton deleteButton;
+    private Item currentSelectedItem;
+
+    private JPopupMenu profileMenu;
+    private final WatchverseFrame frame;
+    private final String SEARCH_HINT = "Search movies or shows...";
+
+    public WatchversePanel(WatchverseFrame frame) {
+        this.frame = frame;
+        setLayout(new BorderLayout());
+        setBackground(UIConstants.MAIN_APP_COLOR);
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        setComponents();
+        setComponentStyles();
+        setComponentLayouts();
+        setEvents();
+
+        // Başlangıç verilerini çek
+        refreshWatchlists();
+        refreshGroups();
+        loadPublicWatchlists();
+    }
+
+    private void setComponents() {
+        String currentUser = ClientUserSession.getInstance().getUsername();
+        String formattedName = currentUser.substring(0, 1).toUpperCase() + currentUser.substring(1);
+
+        watchlistModel = new DefaultListModel<>();
+        watchlists = new JList<>(watchlistModel);
+        groupModel = new DefaultListModel<>();
+        groups = new JList<>(groupModel);
+        publicListModel = new DefaultListModel<>();
+        publicWatchlists = new JList<>(publicListModel);
+
+        searchBar = new JTextField(SEARCH_HINT);
+        discoverSearchBar = new JTextField("Discover other watchlists...");
+        welcomeLabel = new JLabel("Welcome " + formattedName);
+        profileButton = new JButton(String.valueOf(formattedName.charAt(0)));
+
+        // Profil Menüsü
+        profileMenu = new JPopupMenu();
+        JMenuItem settingsItem = new JMenuItem("Settings");
+        JMenuItem logoutItem = new JMenuItem("Logout");
+        settingsItem.addActionListener(e -> frame.openSettings());
+        logoutItem.addActionListener(e -> frame.logout());
+        profileMenu.add(settingsItem);
+        profileMenu.addSeparator();
+        profileMenu.add(logoutItem);
+
+        // Detay Paneli Bileşenleri
+        detailPoster = new JLabel("", SwingConstants.CENTER);
+        detailPoster.setAlignmentX(CENTER_ALIGNMENT);
+        detailPoster.setPreferredSize(new Dimension(220, 330));
+
+        detailTitle = new JLabel("Select an Item", SwingConstants.CENTER);
+        detailTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        detailTitle.setAlignmentX(CENTER_ALIGNMENT);
+
+        detailGenre = new JLabel("", SwingConstants.CENTER);
+        detailGenre.setForeground(Color.GRAY);
+        detailGenre.setAlignmentX(CENTER_ALIGNMENT);
+
+        deleteButton = new JButton("Remove Item");
+        deleteButton.setBackground(new Color(212, 34, 53));
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFocusPainted(false);
+        deleteButton.setAlignmentX(CENTER_ALIGNMENT);
+        deleteButton.setVisible(false);
+    }
+
+    private Object request(String cmd) {
+        return SocketManager.getInstance().sendRequest(cmd);
+    }
+
+    public void refreshWatchlists() {
+        new Thread(() -> {
+            Object res = request("GET_WATCHLISTS###" + ClientUserSession.getInstance().getUsername());
+            if (res instanceof List) {
+                SwingUtilities.invokeLater(() -> {
+                    watchlistModel.clear();
+                    ((List<String>) res).forEach(watchlistModel::addElement);
+                });
+            }
+        }).start();
+    }
+
+    public void refreshGroups() {
+        new Thread(() -> {
+            Object res = request("GET_GROUPS###" + ClientUserSession.getInstance().getUsername());
+            if (res instanceof List) {
+                SwingUtilities.invokeLater(() -> {
+                    groupModel.clear();
+                    ((List<String>) res).forEach(groupModel::addElement);
+                });
+            }
+        }).start();
+    }
+
+    private void loadWatchlist(String listName) {
+        this.currentViewedListName = listName;
+        this.currentViewedListId = -1;
+        Object res = request("GET_LIST_ITEMS###" + ClientUserSession.getInstance().getUsername() + "###" + listName);
+        if (res instanceof List) displayItems((List<Item>) res);
+    }
+
+    private void loadPublicWatchlists() {
+        new Thread(() -> {
+            Object res = request("GET_PUBLIC_LISTS");
+            if (res instanceof List) {
+                SwingUtilities.invokeLater(() -> {
+                    publicListModel.clear();
+                    ((List<PublicWatchlist>) res).forEach(publicListModel::addElement);
+                });
+            }
+        }).start();
+    }
+
+    private void loadPublicListItems(int listId, String listName) {
+        this.currentViewedListId = listId;
+        this.currentViewedListName = listName;
+        Object res = request("GET_PUBLIC_LIST_ITEMS###" + listId);
+        if (res instanceof List) displayItems((List<Item>) res);
+    }
+
+    private void displayItems(List<Item> items) {
+        SwingUtilities.invokeLater(() -> {
+            centerScreen.removeAll();
+
+            if (items == null || items.isEmpty()) {
+                centerLayout.show(centerPanel, "EMPTY");
+            } else {
+                items.sort(Comparator.comparingInt(Item::priority).reversed()
+                        .thenComparingInt(Item::duration).reversed());
+
+                for (Item item : items) {
+                    centerScreen.add(createMovieCard(item));
+                }
+                centerLayout.show(centerPanel, "CONTENT");
+            }
+            centerScreen.revalidate();
+            centerScreen.repaint();
+        });
+    }
+
+    private JButton createMovieCard(Item item) {
+        String pTag = switch (item.priority()) {
+            case 3 -> "[HIGH]";
+            case 2 -> "[MID]";
+            default -> "[LOW]";
+        };
+
+        JButton card = new JButton("<html><center><b>" + item.title() + "</b><br>"
+                + "<font color='red'>" + pTag + "</font> | "
+                + item.duration() + " min</center></html>");
+
+        card.setPreferredSize(new Dimension(150, 210));
+        card.setBackground(Color.WHITE);
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        card.addActionListener(e -> showItemDetails(item));
+        return card;
+    }
+
+    private void showItemDetails(Item item) {
+        this.currentSelectedItem = item;
+        detailTitle.setText("<html><center style='width:200px;'>" + item.title() + "</center></html>");
+        detailGenre.setText(item.genres());
+        deleteButton.setVisible(currentViewedListId == -1);
+
+        new Thread(() -> {
+            try {
+                SwingUtilities.invokeLater(() -> {
+                    detailPoster.setIcon(null);
+                    detailPoster.setText("Loading...");
+                });
+
+                if (item.posterUrl() != null && !item.posterUrl().isEmpty()) {
+                    ImageIcon icon = new ImageIcon(new java.net.URL(item.posterUrl()));
+                    Image scaledImg = icon.getImage().getScaledInstance(220, 330, Image.SCALE_SMOOTH);
+                    SwingUtilities.invokeLater(() -> {
+                        detailPoster.setText("");
+                        detailPoster.setIcon(new ImageIcon(scaledImg));
+                    });
+                } else {
+                    SwingUtilities.invokeLater(() -> detailPoster.setText("No Poster"));
+                }
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> detailPoster.setText("Error"));
+            }
+        }).start();
+
+        eastLayout.show(eastPanel, "ITEM_DETAILS");
+    }
+
+    private void buildNorthPanel() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.add(welcomeLabel, BorderLayout.WEST);
+
+        JPanel searchContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        searchContainer.setOpaque(false);
+        searchBar.setPreferredSize(new Dimension(500, 40));
+        searchContainer.add(searchBar);
+        header.add(searchContainer, BorderLayout.CENTER);
+
+        JPanel profileContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        profileContainer.setOpaque(false);
+        profileContainer.add(profileButton);
+        header.add(profileContainer, BorderLayout.EAST);
+
+        add(header, BorderLayout.NORTH);
+    }
+
+    private void buildWestPanel() {
+        JPanel west = new JPanel();
+        west.setLayout(new BoxLayout(west, BoxLayout.Y_AXIS));
+        west.setPreferredSize(new Dimension(300, 0));
+        west.setOpaque(false);
+        west.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 15));
+
+        // Watchlists
+        west.add(titleWithAdButton("My Watchlists", () -> {
+            new AddWatchlist(frame).setVisible(true);
+            refreshWatchlists();
+        }, "Add new list"));
+        west.add(Box.createVerticalStrut(10));
+        west.add(new JScrollPane(watchlists));
+
+        // Groups
+        west.add(Box.createVerticalStrut(30));
+        west.add(titleWithAdButton("Groups", this::handleGroupOptions, "Manage groups"));
+        west.add(Box.createVerticalStrut(10));
+        west.add(new JScrollPane(groups));
+
+        // Discover
+        west.add(Box.createVerticalStrut(30));
+        JLabel discoverTitle = new JLabel("Discover");
+        discoverTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        west.add(discoverTitle);
+        west.add(Box.createVerticalStrut(10));
+        west.add(discoverSearchBar);
+        west.add(Box.createVerticalStrut(10));
+        west.add(new JScrollPane(publicWatchlists));
+
+        add(west, BorderLayout.WEST);
+    }
+
+    private void handleGroupOptions() {
+        Object[] options = {"Create Group", "Join with Code"};
+        int choice = JOptionPane.showOptionDialog(frame, "Group Management", "Groups",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+
+        if (choice == JOptionPane.YES_OPTION) {
+            new AddGroup(frame).setVisible(true);
+            refreshGroups();
+        } else if (choice == JOptionPane.NO_OPTION) {
+            String code = JOptionPane.showInputDialog(frame, "Enter invite code:");
+            if (code != null && !code.trim().isEmpty()) {
+                Object res = request("JOIN_GROUP###" + ClientUserSession.getInstance().getUsername() + "###" + code.trim());
+                if (res != null && res.toString().startsWith("SUCCESS")) refreshGroups();
+                else JOptionPane.showMessageDialog(frame, "Invalid code or error.");
+            }
+        }
+    }
+
+    private void buildCenterPanel() {
+        centerLayout = new CardLayout();
+        centerPanel = new JPanel(centerLayout);
+        centerPanel.setOpaque(false);
+
+        JPanel emptyState = new JPanel(new GridBagLayout());
+        emptyState.setOpaque(false);
+        JLabel label = new JLabel("Select a list to see content");
+        label.setForeground(Color.GRAY);
+        emptyState.add(label);
+
+        centerScreen = new JPanel(new GridLayout(0, 4, 15, 15));
+        centerScreen.setOpaque(false);
+
+        JPanel aligner = new JPanel(new BorderLayout());
+        aligner.setOpaque(false);
+        aligner.add(centerScreen, BorderLayout.NORTH);
+
+        JScrollPane scroll = new JScrollPane(aligner);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        centerPanel.add(emptyState, "EMPTY");
+        centerPanel.add(scroll, "CONTENT");
+
+        add(centerPanel, BorderLayout.CENTER);
+    }
+
+    private void buildEastPanel() {
+        eastLayout = new CardLayout();
+        eastPanel = new JPanel(eastLayout);
+        eastPanel.setOpaque(false);
+        eastPanel.setPreferredSize(new Dimension(280, 0));
+
+        JPanel itemDetailPanel = new JPanel();
+        itemDetailPanel.setLayout(new BoxLayout(itemDetailPanel, BoxLayout.Y_AXIS));
+        itemDetailPanel.setOpaque(false);
+        itemDetailPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
+
+        itemDetailPanel.add(detailPoster);
+        itemDetailPanel.add(Box.createVerticalStrut(20));
+        itemDetailPanel.add(detailTitle);
+        itemDetailPanel.add(Box.createVerticalStrut(10));
+        itemDetailPanel.add(detailGenre);
+        itemDetailPanel.add(Box.createVerticalStrut(30));
+        itemDetailPanel.add(deleteButton);
+
+        eastPanel.add(new JPanel(), "EMPTY");
+        eastPanel.add(itemDetailPanel, "ITEM_DETAILS");
+
+        add(eastPanel, BorderLayout.EAST);
+    }
+
+    private JPanel titleWithAdButton(String title, Runnable onAdd, String help) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
+        JButton addBtn = new JButton("+");
+        addBtn.setToolTipText(help);
+        addBtn.addActionListener(e -> onAdd.run());
+
+        panel.add(titleLabel, BorderLayout.WEST);
+        panel.add(addBtn, BorderLayout.EAST);
+        return panel;
+    }
+
+    private void performMovieSearch(String query) {
+        centerLayout.show(centerPanel, "EMPTY");
+
+        new Thread(() -> {
+            Object res = request("SEARCH_MOVIES###" + query);
+
+            if (res instanceof List) {
+                List<Item> results = (List<Item>) res;
+
+                SwingUtilities.invokeLater(() -> {
+                    centerScreen.removeAll();
+                    if (results.isEmpty()) {
+                        centerLayout.show(centerPanel, "EMPTY");
+                    } else {
+                        for (Item item : results) {
+                            JButton card = createMovieCard(item);
+
+                            card.addActionListener(ev -> {
+                                new AddMovieToListDialog(frame, item).setVisible(true);
+                            });
+
+                            centerScreen.add(card);
+                        }
+                        centerLayout.show(centerPanel, "CONTENT");
+                    }
+                    centerScreen.revalidate();
+                    centerScreen.repaint();
+                });
+            }
+        }).start();
+    }
+
+    private void setEvents() {
+        UIBehavior.setTextFieldPlaceholder(searchBar, SEARCH_HINT);
+        UIBehavior.setTextFieldPlaceholder(discoverSearchBar, "Search public lists...");
+
+        profileButton.addActionListener(e -> profileMenu.show(profileButton, 0, profileButton.getHeight()));
+
+        // Watchlist Events
+        watchlists.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                int index = watchlists.locationToIndex(e.getPoint());
+                if (index < 0) return;
+
+                String selected = watchlists.getSelectedValue();
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    groups.clearSelection();
+                    publicWatchlists.clearSelection();
+                    loadWatchlist(selected);
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    watchlists.setSelectedIndex(index);
+                    JPopupMenu menu = new JPopupMenu();
+                    JMenuItem del = new JMenuItem("Delete List");
+                    del.addActionListener(ev -> {
+                        if(request("DELETE_LIST###" + ClientUserSession.getInstance().getUsername() + "###" + selected).equals("SUCCESS"))
+                            refreshWatchlists();
+                    });
+                    menu.add(del);
+                    menu.show(watchlists, e.getX(), e.getY());
+                }
+            }
+        });
+
+        // Group Events
+        groups.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && groups.getSelectedValue() != null) {
+                watchlists.clearSelection();
+                publicWatchlists.clearSelection();
+                deleteButton.setVisible(false);
+                Object res = request("GET_GROUP_ITEMS###" + groups.getSelectedValue());
+                if (res instanceof List) displayItems((List<Item>) res);
+            }
+        });
+
+        searchBar.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) { // Enter'a basıldığında
+                    String query = searchBar.getText().trim();
+                    if (!query.isEmpty() && !query.equals(SEARCH_HINT)) {
+                        performMovieSearch(query);
+                    }
+                }
+            }
+        });
+        // Search/Discover Event
+        discoverSearchBar.addKeyListener(new KeyAdapter() {
+            public void keyReleased(KeyEvent e) {
+                String q = discoverSearchBar.getText().toLowerCase().trim();
+                if (q.isEmpty() || q.equals("search public lists...")) {
+                    publicWatchlists.setModel(publicListModel);
+                } else {
+                    DefaultListModel<PublicWatchlist> filtered = new DefaultListModel<>();
+                    for (int i = 0; i < publicListModel.size(); i++) {
+                        if (publicListModel.get(i).name().toLowerCase().contains(q))
+                            filtered.addElement(publicListModel.get(i));
+                    }
+                    publicWatchlists.setModel(filtered);
+                }
+            }
+        });
+
+        // Delete Button Event
+        deleteButton.addActionListener(e -> {
+            if (currentSelectedItem == null || currentViewedListName == null) return;
+            int confirm = JOptionPane.showConfirmDialog(frame, "Delete '" + currentSelectedItem.title() + "'?", "Confirm", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                if (request("REMOVE_ITEM###" + ClientUserSession.getInstance().getUsername() + "###" + currentViewedListName + "###" + currentSelectedItem.apiId()).equals("SUCCESS")) {
+                    loadWatchlist(currentViewedListName);
+                    eastLayout.show(eastPanel, "EMPTY");
+                }
+            }
+        });
+    }
+
+    private void setComponentStyles() {
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        profileButton.setPreferredSize(new Dimension(45, 45));
+        profileButton.setBackground(new Color(60, 60, 60));
+        profileButton.setForeground(Color.WHITE);
+        profileButton.setFocusPainted(false);
+        profileButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
+
+    private void setComponentLayouts() {
+        buildNorthPanel();
+        buildWestPanel();
+        buildCenterPanel();
+        buildEastPanel();
+    }
+}

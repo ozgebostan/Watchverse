@@ -2,18 +2,18 @@ package Client.UI.frames;
 
 import Client.UI.dialogs.SettingsDialog;
 
-import Client.UI.panels.AppPanel;
+import Client.UI.panels.WatchversePanel;
 import Model.ClientUserSession;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * Giriş yaptıktan sonra açılan ana uygulama penceresi.
+ * Main app panel after login
  */
 public class WatchverseFrame extends BaseFrame {
 
-    private AppPanel appPanel;
+    private WatchversePanel watchversePanel;
 
     public WatchverseFrame() {
         super("Watchverse - " + ClientUserSession.getInstance().getUsername());
@@ -26,9 +26,9 @@ public class WatchverseFrame extends BaseFrame {
     }
 
     private void initializePanel() {
-        appPanel = new AppPanel(this);
+        watchversePanel = new WatchversePanel(this);
 
-        container.add(appPanel, "MAIN_APP");
+        container.add(watchversePanel, "MAIN_APP");
         showScreen("MAIN_APP");
     }
 

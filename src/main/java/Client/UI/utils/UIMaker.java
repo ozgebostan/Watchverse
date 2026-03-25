@@ -66,11 +66,19 @@ public final class UIMaker {
 
 
     public static void styleButton(JButton button) {
-        button.setMaximumSize(COMP_SIZE);
+        button.setMaximumSize(new Dimension(300, 40));
+        button.setPreferredSize(new Dimension(300, 40));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        button.setFont(new Font("Segoe UI", Font.BOLD, 18));
+
+        Color rosePink = new Color(175, 110, 117);
+        button.setBackground(rosePink);
+        button.setForeground(Color.WHITE);
+
         button.setFocusPainted(false);
         button.setBorderPainted(false);
-
-        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setContentAreaFilled(true);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 

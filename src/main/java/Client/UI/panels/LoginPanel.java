@@ -1,6 +1,6 @@
-package Client.panels;
+package Client.UI.panels;
 
-import Client.UI.panels.BaseAuthPanel;
+import Client.UI.frames.WatchverseFrame;
 import Client.UI.frames.BaseFrame;
 import Client.Services.AuthClient;
 import Model.AuthResult;
@@ -90,7 +90,7 @@ public class LoginPanel extends BaseAuthPanel {
             JOptionPane.showMessageDialog(frame, "Login Successful! Welcome " + uName);
 
             frame.dispose();
-            SwingUtilities.invokeLater(AppFrame::new);
+            SwingUtilities.invokeLater(WatchverseFrame::new);
         } else {
             handleLoginError(result);
         }
