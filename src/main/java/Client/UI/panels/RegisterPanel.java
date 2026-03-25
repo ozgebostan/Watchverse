@@ -1,34 +1,33 @@
 package Client.UI.panels;
 
+import Client.Services.AuthClient;
 import Client.UI.frames.BaseFrame;
 import Client.UI.utils.SecurityConstants;
 import Client.UI.utils.UIBehavior;
 import Client.UI.utils.UIConstants;
 import Client.UI.utils.UIMaker;
 import Model.AuthResult;
-import Client.Services.AuthClient;
 
 import javax.swing.*;
 import java.awt.*;
 
+import static Client.UI.utils.UIConstants.*;
+
 public class RegisterPanel extends BaseAuthPanel {
+    private final BaseFrame frame;
+    private final String USER_HINT = "Enter username...";
+    private final String PASS_HINT = "Enter password...";
+    private final String CONFIRM_HINT = "Enter password again...";
+    private final String ANSWER_HINT = "Enter your answer...";
     private JPanel step1Panel, step2Panel, cardPanel;
     private CardLayout cardLayout;
-
     private JLabel username, password;
     private JTextField usernameField, securityAnswerField;
     private JPasswordField passwordField, confirmPasswordField;
     private JComboBox<String> securityQuestionBox;
     private JButton nextButton, signupButton;
-
     private String tempUsername, tempPassword;
-    private final BaseFrame frame;
-    private AuthClient authClient; // AuthClient olarak güncelledik
-
-    private final String USER_HINT = "Enter username...";
-    private final String PASS_HINT = "Enter password...";
-    private final String CONFIRM_HINT = "Enter password again...";
-    private final String ANSWER_HINT = "Enter your answer...";
+    private final AuthClient authClient;
 
     public RegisterPanel(BaseFrame frame) {
         super();
@@ -62,15 +61,15 @@ public class RegisterPanel extends BaseAuthPanel {
         step1Panel.setOpaque(false);
 
         step1Panel.add(username);
-        step1Panel.add(Box.createVerticalStrut(4));
-        step1Panel.add(usernameField);
-        step1Panel.add(Box.createVerticalStrut(4));
-        step1Panel.add(password);
-        step1Panel.add(Box.createVerticalStrut(4));
-        step1Panel.add(passwordField);
-        step1Panel.add(Box.createVerticalStrut(8));
-        step1Panel.add(confirmPasswordField);
         step1Panel.add(Box.createVerticalStrut(10));
+        step1Panel.add(usernameField);
+        step1Panel.add(Box.createVerticalStrut(20));
+        step1Panel.add(password);
+        step1Panel.add(Box.createVerticalStrut(10));
+        step1Panel.add(passwordField);
+        step1Panel.add(Box.createVerticalStrut(15));
+        step1Panel.add(confirmPasswordField);
+        step1Panel.add(Box.createVerticalStrut(20));
         step1Panel.add(nextButton);
     }
 
@@ -81,7 +80,7 @@ public class RegisterPanel extends BaseAuthPanel {
 
         step2Panel.add(Box.createVerticalStrut(20));
         step2Panel.add(securityQuestionBox);
-        step2Panel.add(Box.createVerticalStrut(15));
+        step2Panel.add(Box.createVerticalStrut(30));
         step2Panel.add(securityAnswerField);
         step2Panel.add(Box.createVerticalStrut(20));
         step2Panel.add(signupButton);
@@ -134,13 +133,19 @@ public class RegisterPanel extends BaseAuthPanel {
         UIMaker.styleField(usernameField, true);
         UIMaker.stylePasswordField(passwordField, true);
         UIMaker.stylePasswordField(confirmPasswordField, true);
-        UIMaker.styleButton(nextButton);
+        UIMaker.styleButton(nextButton, COMP_SIZE);
         nextButton.setAlignmentX(CENTER_ALIGNMENT);
 
-        securityQuestionBox.setMaximumSize(UIConstants.COMP_SIZE);
+        UIMaker.styleComboBox(securityQuestionBox);
+
+        //security answer field
         UIMaker.styleField(securityAnswerField, true);
-        UIMaker.styleButton(signupButton);
-        signupButton.setAlignmentX(CENTER_ALIGNMENT);
+        securityAnswerField.setMaximumSize(new Dimension(330, COMP_SIZE.height));
+
+
+        //signup button
+        UIMaker.styleButton(signupButton, new Dimension(330, COMP_SIZE.height));
+
     }
 
     private void setEvents() {

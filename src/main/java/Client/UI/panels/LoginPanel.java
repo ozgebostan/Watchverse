@@ -132,7 +132,7 @@ public class LoginPanel extends BaseAuthPanel {
         UIMaker.stylePasswordField(passwordField, false);
         UIMaker.styleLinkLabel(forgotLabel);
         UIMaker.styleLinkLabel(signupLabel);
-        UIMaker.styleButton(loginButton);
+        UIMaker.styleButton(loginButton, UIConstants.COMP_SIZE);
 
         forgotLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         signupLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));

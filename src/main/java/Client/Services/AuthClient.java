@@ -48,7 +48,7 @@ public class AuthClient {
 
     public boolean isPasswordStrong(String password) {
         if (password == null) return false;
-        return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,}$");
+        return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
     }
 
     private AuthResult parseResponse(Object response) {

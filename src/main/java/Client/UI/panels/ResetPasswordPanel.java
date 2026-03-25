@@ -123,7 +123,7 @@ public class ResetPasswordPanel extends BaseAuthPanel {
         UIMaker.styleLabel(confirmLabel, UIConstants.LABEL_COLOR);
         UIMaker.stylePasswordField(newPasswordField, true);
         UIMaker.stylePasswordField(confirmPasswordField, true);
-        UIMaker.styleButton(resetButton);
+        UIMaker.styleButton(resetButton, UIConstants.COMP_SIZE);
         resetButton.setAlignmentX(CENTER_ALIGNMENT);
     }
 

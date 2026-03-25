@@ -99,7 +99,7 @@ public class ForgotPasswordPanel extends BaseAuthPanel {
         usernameLabel.setAlignmentX(CENTER_ALIGNMENT);
         UIMaker.styleLabel(usernameLabel, UIConstants.LABEL_COLOR);
         UIMaker.styleField(usernameField, true);
-        UIMaker.styleButton(verifyButton);
+        UIMaker.styleButton(verifyButton, UIConstants.COMP_SIZE);
         verifyButton.setAlignmentX(CENTER_ALIGNMENT);
     }
 

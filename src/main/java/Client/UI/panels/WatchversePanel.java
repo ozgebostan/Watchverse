@@ -1,44 +1,42 @@
 package Client.UI.panels;
 
 import Client.Network.SocketManager;
+import Client.UI.dialogs.AddGroup;
 import Client.UI.dialogs.AddMovieToListDialog;
 import Client.UI.dialogs.AddWatchlist;
 import Client.UI.frames.WatchverseFrame;
 import Client.UI.utils.UIBehavior;
 import Client.UI.utils.UIConstants;
-import Client.UI.dialogs.AddGroup;
 import Model.ClientUserSession;
 import Model.Item;
 import Model.PublicWatchlist;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
-import java.util.Comparator;
 
 public class WatchversePanel extends JPanel {
+    private final WatchverseFrame frame;
+    private final String SEARCH_HINT = "Search movies or shows...";
     private String currentViewedListName;
     private int currentViewedListId = -1;
-
     private JLabel welcomeLabel;
     private JTextField searchBar, discoverSearchBar;
     private JButton profileButton;
     private JList<String> watchlists, groups;
     private DefaultListModel<String> watchlistModel, groupModel;
-
     private JList<PublicWatchlist> publicWatchlists;
     private DefaultListModel<PublicWatchlist> publicListModel;
-
     private JPanel centerPanel, centerScreen, eastPanel;
     private CardLayout centerLayout, eastLayout;
     private JLabel detailPoster, detailTitle, detailGenre;
     private JButton deleteButton;
     private Item currentSelectedItem;
-
     private JPopupMenu profileMenu;
-    private final WatchverseFrame frame;
-    private final String SEARCH_HINT = "Search movies or shows...";
 
     public WatchversePanel(WatchverseFrame frame) {
         this.frame = frame;
@@ -163,15 +161,25 @@ public class WatchversePanel extends JPanel {
             centerScreen.removeAll();
 
             if (items == null || items.isEmpty()) {
-                centerLayout.show(centerPanel, "EMPTY");
-            } else {
-                items.sort(Comparator.comparingInt(Item::priority).reversed()
-                        .thenComparingInt(Item::duration).reversed());
+                items.sort((a, b) -> {
+                    double scoreA = (double) a.priority() / Math.max(1, a.duration());
+                    double scoreB = (double) b.priority() / Math.max(1, b.duration());
+
+                    int comparison = Double.compare(scoreB, scoreA);
+
+                    if (comparison == 0) {
+                        return a.title().compareToIgnoreCase(b.title());
+                    }
+
+                    return comparison;
+                });
 
                 for (Item item : items) {
                     centerScreen.add(createMovieCard(item));
                 }
                 centerLayout.show(centerPanel, "CONTENT");
+            } else {
+                centerLayout.show(centerPanel, "EMPTY");
             }
             centerScreen.revalidate();
             centerScreen.repaint();
@@ -424,7 +432,7 @@ public class WatchversePanel extends JPanel {
                     JPopupMenu menu = new JPopupMenu();
                     JMenuItem del = new JMenuItem("Delete List");
                     del.addActionListener(ev -> {
-                        if(request("DELETE_LIST###" + ClientUserSession.getInstance().getUsername() + "###" + selected).equals("SUCCESS"))
+                        if (request("DELETE_LIST###" + ClientUserSession.getInstance().getUsername() + "###" + selected).equals("SUCCESS"))
                             refreshWatchlists();
                     });
                     menu.add(del);

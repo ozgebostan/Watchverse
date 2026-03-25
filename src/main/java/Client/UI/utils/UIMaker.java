@@ -46,9 +46,9 @@ public final class UIMaker {
     }
 
     public static void styleComboBox(JComboBox<?> box) {
-        box.setMaximumSize(COMP_SIZE);
+        box.setMaximumSize(new Dimension(330, 35));
         box.setAlignmentX(Component.CENTER_ALIGNMENT);
-        box.setFont(FIELD_FONT);
+        box.setFont(new Font("Segoe UI", Font.BOLD, 16));
         box.setFocusable(false);
     }
 
@@ -64,10 +64,9 @@ public final class UIMaker {
         }
     }
 
-
-    public static void styleButton(JButton button) {
-        button.setMaximumSize(new Dimension(300, 40));
-        button.setPreferredSize(new Dimension(300, 40));
+    public static void styleButton(JButton button, Dimension dimensions) {
+        button.setMaximumSize(new Dimension(dimensions.width, dimensions.height));
+        button.setPreferredSize(new Dimension(dimensions.width, dimensions.height));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         button.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -100,17 +99,5 @@ public final class UIMaker {
         field.setText(hint);
         field.setForeground(HINT_GRAY);
         field.setEchoChar((char) 0);
-    }
-
-    //for the ones who don't have placeholders (login panel)
-    public static void clearField(JTextField field) {
-        field.setText("");
-        field.setForeground(Color.BLACK);
-    }
-
-    public static void clearPasswordField(JPasswordField field) {
-        field.setText("");
-        field.setForeground(Color.BLACK);
-        field.setEchoChar('•');
     }
 }
