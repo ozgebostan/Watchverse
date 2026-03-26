@@ -118,20 +118,17 @@ public class ClientHandler implements Runnable {
             String title = parts[1];
             String type = (parts.length >= 3) ? parts[2] : "movie";
 
-            // 🔍 API'YE GİTMEDEN ÖNCE BİR KONTROL
-            System.out.println("[SERVER] ApiManager cagrilıyor...");
             String jsonResponse = apiManager.search(title, type);
 
             if (jsonResponse == null) {
                 System.err.println("[SERVER] HATA: TMDB'den cevap bos dondu!");
-                sendResponse(out, new ArrayList<Item>()); // Boş liste gönder ki Client beklemesin
+                sendResponse(out, new ArrayList<Item>());
                 return;
             }
 
-            System.out.println("[SERVER] JSON ayristiriliyor...");
             List<Item> results = apiManager.parseResponse(jsonResponse, type);
 
-            System.out.println("[SERVER] Islem tamam, " + results.size() + " film gonderiliyor.");
+            System.out.println("[SERVER] Operation completed, " + results.size() + " film gonderiliyor.");
             sendResponse(out, results);
 
         } catch (Exception e) {
@@ -167,6 +164,9 @@ public class ClientHandler implements Runnable {
 
     private void handleCreateList(ObjectOutputStream out, String[] parts) throws Exception {
         if (parts.length >= 4) {
+            System.out.println("DEBUG -> Username: " + parts[1]);
+            System.out.println("DEBUG -> ListName: " + parts[2]);
+            System.out.println("DEBUG -> Visibility: " + parts[3]);
             sendResponse(out, watchlistService.createWatchlist(parts[1], parts[2], parts[3]) ? "SUCCESS" : "FAIL");
         }
     }

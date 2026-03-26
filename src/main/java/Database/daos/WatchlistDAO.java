@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Singleton DAO class for managing watchlists, groups, and media items.
@@ -41,7 +42,7 @@ public class WatchlistDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, listName);
-            pstmt.setString(3, visibility);
+            pstmt.setString(3, visibility.toLowerCase());
             return pstmt.executeUpdate() == 1;
         }
     }
@@ -135,7 +136,7 @@ public class WatchlistDAO {
             ps.setString(1, username);
             ps.setString(2, listName);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getString("visibility") : "PRIVATE";
+                return rs.next() ? rs.getString("visibility") : "private";
             }
         }
     }
@@ -243,7 +244,7 @@ public class WatchlistDAO {
 
     public List<PublicWatchlist> getPublicWatchlists() throws SQLException {
         List<PublicWatchlist> lists = new ArrayList<>();
-        String sql = "SELECT id, name FROM watchlists WHERE visibility = 'PUBLIC'";
+        String sql = "SELECT id, name FROM watchlists WHERE visibility = 'public'";
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

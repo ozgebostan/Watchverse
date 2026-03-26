@@ -62,7 +62,7 @@ public class DatabaseManager {
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
                         name TEXT NOT NULL,
-                        visibility TEXT DEFAULT 'PRIVATE' CHECK(visibility IN ('PRIVATE', 'LINK_ONLY', 'PUBLIC')),
+                        visibility TEXT DEFAULT 'private' CHECK(visibility IN ('private', 'link_only', 'public')),
                         share_token TEXT,
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
