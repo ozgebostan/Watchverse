@@ -1,6 +1,7 @@
 package Client.UI.dialogs;
 
 import Client.Network.SocketManager;
+import Client.UI.utils.UIConstants;
 import Client.UI.utils.UIMaker;
 import Model.ClientUserSession;
 
@@ -17,15 +18,17 @@ public class AddGroup extends BaseDialog {
 
     @Override
     protected void addContent(Container container) {
-        JLabel nameLabel = new JLabel("Group Name");
+        JLabel nameLabel = new JLabel("Group Name:");
         groupName = new JTextField();
 
         nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         groupName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+
         UIMaker.styleLabel(nameLabel, Color.BLACK);
         UIMaker.styleField(groupName, false);
 
+        container.setBackground(UIConstants.MAIN_APP_COLOR);
         container.add(Box.createVerticalGlue());
         container.add(nameLabel);
         container.add(Box.createVerticalStrut(10));

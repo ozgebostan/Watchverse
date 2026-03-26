@@ -34,14 +34,11 @@ public class ApiManager {
         }
     }
 
-
-
     /**
      * Executes a search request to TMDB.
      */
     public String search(String query, String type) {
 
-        System.out.println("[API] Kullanilan Key: " + apiKey);
         if (apiKey == null || apiKey.isEmpty()) return null;
 
         HttpURLConnection connection = null;
@@ -103,7 +100,6 @@ public class ApiManager {
                         ? IMAGE_BASE_URL + posterPath
                         : null;
 
-                // --- Genre Mapping (Using our improved GenreMapper) ---
                 List<Integer> genreIdList = new ArrayList<>();
                 JSONArray genreIdsJson = raw.optJSONArray("genre_ids");
                 if (genreIdsJson != null) {
@@ -111,7 +107,6 @@ public class ApiManager {
                         genreIdList.add(genreIdsJson.getInt(j));
                     }
                 }
-                // Tek satırda tüm türleri çözen yeni metodumuzu kullanıyoruz:
                 String finalGenres = GenreMapper.getGenreNames(genreIdList);
 
                 // Create the Item (Record style)

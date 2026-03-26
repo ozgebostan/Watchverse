@@ -37,7 +37,7 @@ public final class UIMaker {
 
     public static void styleField(JTextField field, boolean hasHintText) {
         field.setMaximumSize(COMP_SIZE);
-        field.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         field.setFont(FIELD_FONT);
 
         if (hasHintText) {

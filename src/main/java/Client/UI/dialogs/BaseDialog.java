@@ -20,7 +20,7 @@ public abstract class BaseDialog extends JDialog {
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        mainPanel.setBackground(Color.WHITE); // Opsiyonel: Daha temiz bir görünüm için
+        mainPanel.setBackground(Color.WHITE);
         setContentPane(mainPanel);
 
         addContent(mainPanel);
@@ -32,7 +32,7 @@ public abstract class BaseDialog extends JDialog {
     }
 
     private void addButtons(Container container, String confirmText) {
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 40, 10));
         buttonPanel.setOpaque(false);
         buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 

@@ -154,13 +154,11 @@ public class WatchlistService {
         }
     }
 
-    // --- Helpers ---
-
     public String getWatchlistVisibility(String username, String listName) {
         try {
             return watchlistDao.getWatchlistVisibility(username, listName);
         } catch (SQLException e) {
-            return "PRIVATE";
+            return "private";
         }
     }
 

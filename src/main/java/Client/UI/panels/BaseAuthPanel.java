@@ -32,9 +32,10 @@ public abstract class BaseAuthPanel extends JPanel {
         top.add(Box.createHorizontalGlue());
         add(top);
 
-        LogoMaker.addLogoTo(this, "/Logo_final.png", 220, 220, CENTER_ALIGNMENT, 20);
+        LogoMaker.addLogoTo(this, "/Logo.png", 200, 200, CENTER_ALIGNMENT, 20);
 
         build();
+
 
         this.addComponentListener(new ComponentAdapter() {
             @Override

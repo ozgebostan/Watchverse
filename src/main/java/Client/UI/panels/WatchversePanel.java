@@ -69,6 +69,9 @@ public class WatchversePanel extends JPanel {
         publicListModel = new DefaultListModel<>();
         publicWatchlists = new JList<>(publicListModel);
 
+        watchlists.setAlignmentX(LEFT_ALIGNMENT);
+        publicWatchlists.setAlignmentX(LEFT_ALIGNMENT);
+
         searchBar = new JTextField(SEARCH_HINT);
         UIMaker.styleField(searchBar, true);
         searchBar.setPreferredSize(new Dimension(740, 40));
@@ -77,14 +80,23 @@ public class WatchversePanel extends JPanel {
         discoverSearchBar = new JTextField("Discover other watchlists...");
         UIMaker.styleField(discoverSearchBar, true);
 
+        discoverSearchBar.setMaximumSize(new Dimension(330, 35));
+        discoverSearchBar.setPreferredSize(new Dimension(330 , 35));
+
+        discoverSearchBar.setAlignmentX(LEFT_ALIGNMENT);
+
         welcomeLabel = new JLabel("Welcome " + formattedName);
 
         profileButton = new JButton(String.valueOf(formattedName.charAt(0)));
-        UIMaker.styleButton(profileButton, new Dimension(50, 50));
+        profileButton.setFocusPainted(false);
+        profileButton.setBorderPainted(false);
+        profileButton.setContentAreaFilled(false);
+        profileButton.setOpaque(true);
+        profileButton.setFont(UIConstants.LABEL_FONT);
 
         // Profile Menu
         profileMenu = new JPopupMenu();
-        profileMenu.setAlignmentX(CENTER_ALIGNMENT);
+        profileMenu.setPopupSize(120, 100);
 
         JMenuItem settingsItem = new JMenuItem("Settings");
         settingsItem.setFont(UIConstants.LINK_FONT);
@@ -304,22 +316,27 @@ public class WatchversePanel extends JPanel {
         west.add(titleWithAdButton("My Watchlists", () -> {
             new AddWatchlist(frame).setVisible(true);
             refreshWatchlists();
-        }, "Add new list", "+"));
+        }, "Add new list", "+", true));
         west.add(Box.createVerticalStrut(10));
 
-        west.add(new JScrollPane(watchlists));
+        JScrollPane watchlistScroll = new JScrollPane(watchlists);
+        watchlistScroll.setAlignmentX(LEFT_ALIGNMENT);
+        west.add(watchlistScroll);
 
         // Groups
         west.add(Box.createVerticalStrut(30));
-        west.add(titleWithAdButton("Groups", this::handleGroupOptions, "Manage groups","+"));
+        west.add(titleWithAdButton("Groups", this::handleGroupOptions, "Manage groups","+", true));
         west.add(Box.createVerticalStrut(10));
-        west.add(new JScrollPane(groups));
+
+        JScrollPane groupScroll = new JScrollPane(groups);
+        groupScroll.setAlignmentX(LEFT_ALIGNMENT);
+        west.add(groupScroll);
 
         // Discover
         west.add(Box.createVerticalStrut(30));
         JPanel discoverHeader = titleWithAdButton("Discover", () -> {
             System.out.println("Searching public lists...");
-        }, "Search public lists", "🔍");
+        }, "Search public lists", "", false);
 
 
         west.add(discoverHeader);
@@ -328,7 +345,9 @@ public class WatchversePanel extends JPanel {
 
         west.add(Box.createVerticalStrut(10));
 
-        west.add(new JScrollPane(publicWatchlists));
+        JScrollPane discoverScroll = new JScrollPane(publicWatchlists);
+        discoverScroll.setAlignmentX(LEFT_ALIGNMENT);
+        west.add(discoverScroll);
 
         add(west, BorderLayout.WEST);
     }
@@ -422,7 +441,7 @@ public class WatchversePanel extends JPanel {
         add(eastPanel, BorderLayout.EAST);
     }
 
-    private JPanel titleWithAdButton(String title, Runnable onAdd, String help, String btnText) {
+    private JPanel titleWithAdButton(String title, Runnable onAdd, String help, String btnText, boolean isVisible) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
         panel.setMaximumSize(new Dimension(UIConstants.COMP_SIZE.width, 35));
@@ -432,6 +451,12 @@ public class WatchversePanel extends JPanel {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
         JButton addBtn = new JButton(btnText);
+
+        panel.setMaximumSize(new Dimension(330, 35));
+        panel.setPreferredSize(new Dimension(330, 35));
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        addBtn.setVisible(isVisible);
+
         addBtn.setToolTipText(help);
         addBtn.setFocusPainted(false);
         addBtn.addActionListener(e -> onAdd.run());
@@ -477,7 +502,13 @@ public class WatchversePanel extends JPanel {
         UIBehavior.setTextFieldPlaceholder(searchBar, SEARCH_HINT);
         UIBehavior.setTextFieldPlaceholder(discoverSearchBar, "Search public lists...");
 
-        profileButton.addActionListener(e -> profileMenu.show(profileButton, 0, profileButton.getHeight()));
+        profileButton.addActionListener(e -> {
+            int menuWidth = profileMenu.getPreferredSize().width;
+            int x = profileButton.getWidth() - menuWidth;
+            int y = profileButton.getHeight();
+
+            profileMenu.show(profileButton, x, y);
+        });
 
         // Watchlist Events
         watchlists.addMouseListener(new MouseAdapter() {

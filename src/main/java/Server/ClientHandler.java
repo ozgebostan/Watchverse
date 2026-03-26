@@ -1,6 +1,5 @@
 package Server;
 
-import Model.AuthResult;
 import Model.Item;
 import Server.Services.ApiManager;
 import Server.Services.AuthService;
@@ -113,7 +112,7 @@ public class ClientHandler implements Runnable {
 
     private void handleSearch(ObjectOutputStream out, String[] parts) {
         try {
-            System.out.println("[SERVER] Arama basladi: " + parts[1]);
+            System.out.println("[SERVER] Search begin: " + parts[1]);
 
             String title = parts[1];
             String type = (parts.length >= 3) ? parts[2] : "movie";
@@ -121,7 +120,7 @@ public class ClientHandler implements Runnable {
             String jsonResponse = apiManager.search(title, type);
 
             if (jsonResponse == null) {
-                System.err.println("[SERVER] HATA: TMDB'den cevap bos dondu!");
+                System.err.println("[SERVER] ERROR: TMDB returned null!");
                 sendResponse(out, new ArrayList<Item>());
                 return;
             }
@@ -132,8 +131,8 @@ public class ClientHandler implements Runnable {
             sendResponse(out, results);
 
         } catch (Exception e) {
-            System.err.println("[SERVER] handleSearch icinde KRITIK HATA!");
-            e.printStackTrace(); // Bu hata mesajı her şeyi acıklayacak
+            System.err.println("[SERVER] Unexpected critical error in handleSearch!");
+            e.printStackTrace();
             try { sendResponse(out, new ArrayList<Item>()); } catch (Exception ignored) {}
         }
     }
@@ -164,9 +163,6 @@ public class ClientHandler implements Runnable {
 
     private void handleCreateList(ObjectOutputStream out, String[] parts) throws Exception {
         if (parts.length >= 4) {
-            System.out.println("DEBUG -> Username: " + parts[1]);
-            System.out.println("DEBUG -> ListName: " + parts[2]);
-            System.out.println("DEBUG -> Visibility: " + parts[3]);
             sendResponse(out, watchlistService.createWatchlist(parts[1], parts[2], parts[3]) ? "SUCCESS" : "FAIL");
         }
     }

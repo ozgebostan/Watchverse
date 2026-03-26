@@ -1,16 +1,18 @@
 package Client.UI.dialogs;
 
 import Client.Network.SocketManager;
-import Client.UI.utils.UIConstants; // Renkler için
+import Client.UI.utils.UIConstants;
 import Client.UI.utils.UIMaker;
 import Model.ClientUserSession;
 
 import javax.swing.*;
 import java.awt.*;
 
+import static Client.UI.utils.UIConstants.FIELD_FONT;
+
 public class AddWatchlist extends BaseDialog {
 
-    private JTextField watchlistName;
+    private JTextField watchlistNameField;
     private JComboBox<String> typeBox;
 
     public AddWatchlist(JFrame frame) {
@@ -19,41 +21,46 @@ public class AddWatchlist extends BaseDialog {
 
     @Override
     protected void addContent(Container container) {
-        JLabel nameLabel = new JLabel("Watchlist Name");
-        watchlistName = new JTextField();
+        JLabel nameLabel = new JLabel("Watchlist Name:");
+        watchlistNameField = new JTextField();
 
-        JLabel typeLabel = new JLabel("Visibility Type");
+        JLabel typeLabel = new JLabel("Visibility Type:");
         typeBox = new JComboBox<>(new String[]{"Private", "Public", "Link-Only"});
+        typeBox.setFont(UIConstants.LABEL_FONT);
+
 
         nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        watchlistName.setAlignmentX(Component.LEFT_ALIGNMENT);
+        watchlistNameField.setAlignmentX(Component.LEFT_ALIGNMENT);
         typeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         typeBox.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+
         UIMaker.styleLabel(nameLabel, Color.BLACK);
-        UIMaker.styleField(watchlistName, false);
+
+        watchlistNameField.setFont(FIELD_FONT);
+        watchlistNameField.setMaximumSize(new Dimension(152, 35));
         UIMaker.styleLabel(typeLabel, Color.BLACK);
 
-        typeBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        typeBox.setMaximumSize(new Dimension(152, 35));
         typeBox.setBackground(Color.WHITE);
 
-        // 3. Paneli İnşa Et
+        container.setBackground(UIConstants.MAIN_APP_COLOR);
         container.add(nameLabel);
-        container.add(Box.createVerticalStrut(8));
-        container.add(watchlistName);
+        container.add(Box.createVerticalStrut(6));
+        container.add(watchlistNameField);
 
         container.add(Box.createVerticalStrut(20));
 
         container.add(typeLabel);
-        container.add(Box.createVerticalStrut(8));
+        container.add(Box.createVerticalStrut(6));
         container.add(typeBox);
 
-        container.add(Box.createVerticalGlue());
+        container.add(Box.createVerticalStrut(20));
     }
 
     @Override
     protected void onConfirm() {
-        String name = watchlistName.getText().trim();
+        String name = watchlistNameField.getText().trim();
         String type = (String) typeBox.getSelectedItem();
 
         if (name.isEmpty()) {

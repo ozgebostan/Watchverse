@@ -39,9 +39,9 @@ public class AddMovieToListDialog extends BaseDialog {
 
         JLabel priorityLabel = new JLabel("Priority Level:");
         priorityLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        String[] priorities = {"🧊 Low (1)", "⚡ Medium (2)", "🔥 High (3)"};
+        String[] priorities = {"Low (1)", "⚡ Medium (2)", "High (3)"};
         prioritySelector = new JComboBox<>(priorities);
-        prioritySelector.setSelectedIndex(1); // Varsayılan: Medium
+        prioritySelector.setSelectedIndex(1);
         prioritySelector.setMaximumSize(new Dimension(300, 35));
 
         JLabel durationLabel = new JLabel("Duration (Minutes):");
@@ -51,6 +51,7 @@ public class AddMovieToListDialog extends BaseDialog {
         durationSpinner = new JSpinner(new SpinnerNumberModel(initialDuration, 1, 1000, 5));
         durationSpinner.setMaximumSize(new Dimension(300, 35));
 
+        container.setBackground(UIConstants.MAIN_APP_COLOR);
         container.add(Box.createVerticalStrut(10));
         container.add(movieTitleLabel);
         container.add(Box.createVerticalStrut(25));

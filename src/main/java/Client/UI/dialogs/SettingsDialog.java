@@ -32,6 +32,7 @@ public class SettingsDialog extends BaseDialog {
         oldPasswordField = new JPasswordField();
         newPasswordField = new JPasswordField();
 
+        container.setBackground(UIConstants.MAIN_APP_COLOR);
         UIMaker.styleLabel(oldPasswordLabel, Color.BLACK);
         UIMaker.styleLabel(newPasswordLabel, Color.BLACK);
         UIMaker.styleField(newPasswordField, false);
@@ -56,18 +57,27 @@ public class SettingsDialog extends BaseDialog {
         UIMaker.styleLabel(dangerLabel, UIConstants.DELETE);
 
         deleteAccountButton = new JButton("Delete Account");
-        deleteAccountButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        deleteAccountButton.setFocusPainted(false);
+        deleteAccountButton.setMaximumSize(UIConstants.COMP_SIZE);
+        deleteAccountButton.setPreferredSize(UIConstants.COMP_SIZE);
+        deleteAccountButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        deleteAccountButton.setFont(UIConstants.LABEL_FONT);
         deleteAccountButton.setBackground(UIConstants.DELETE);
         deleteAccountButton.setForeground(Color.WHITE);
-        deleteAccountButton.setAlignmentX(CENTER_ALIGNMENT);
+
+        deleteAccountButton.setFocusPainted(false);
+        deleteAccountButton.setBorderPainted(false);
+        deleteAccountButton.setContentAreaFilled(true);
+        deleteAccountButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
 
         deleteAccountButton.addActionListener(e -> onDeleteAccount());
 
         container.add(dangerLabel);
         container.add(Box.createVerticalStrut(10));
         container.add(deleteAccountButton);
-        container.add(Box.createVerticalGlue());
+        container.add(Box.createVerticalStrut(20));
+
     }
 
     @Override
