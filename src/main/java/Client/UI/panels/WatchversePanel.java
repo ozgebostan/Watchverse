@@ -7,6 +7,7 @@ import Client.UI.dialogs.AddWatchlist;
 import Client.UI.frames.WatchverseFrame;
 import Client.UI.utils.UIBehavior;
 import Client.UI.utils.UIConstants;
+import Client.UI.utils.UIMaker;
 import Model.ClientUserSession;
 import Model.Item;
 import Model.PublicWatchlist;
@@ -19,6 +20,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class WatchversePanel extends JPanel {
@@ -68,21 +70,37 @@ public class WatchversePanel extends JPanel {
         publicWatchlists = new JList<>(publicListModel);
 
         searchBar = new JTextField(SEARCH_HINT);
-        discoverSearchBar = new JTextField("Discover other watchlists...");
-        welcomeLabel = new JLabel("Welcome " + formattedName);
-        profileButton = new JButton(String.valueOf(formattedName.charAt(0)));
+        UIMaker.styleField(searchBar, true);
+        searchBar.setPreferredSize(new Dimension(740, 40));
 
-        // Profil Menüsü
+
+        discoverSearchBar = new JTextField("Discover other watchlists...");
+        UIMaker.styleField(discoverSearchBar, true);
+
+        welcomeLabel = new JLabel("Welcome " + formattedName);
+
+        profileButton = new JButton(String.valueOf(formattedName.charAt(0)));
+        UIMaker.styleButton(profileButton, new Dimension(50, 50));
+
+        // Profile Menu
         profileMenu = new JPopupMenu();
+        profileMenu.setAlignmentX(CENTER_ALIGNMENT);
+
         JMenuItem settingsItem = new JMenuItem("Settings");
+        settingsItem.setFont(UIConstants.LINK_FONT);
+        settingsItem.setForeground(UIConstants.LINK_COLOR);
+
         JMenuItem logoutItem = new JMenuItem("Logout");
+        logoutItem.setFont(UIConstants.LINK_FONT);
+        logoutItem.setForeground(UIConstants.LINK_COLOR);
+
         settingsItem.addActionListener(e -> frame.openSettings());
         logoutItem.addActionListener(e -> frame.logout());
         profileMenu.add(settingsItem);
         profileMenu.addSeparator();
         profileMenu.add(logoutItem);
 
-        // Detay Paneli Bileşenleri
+        // Details Panel items
         detailPoster = new JLabel("", SwingConstants.CENTER);
         detailPoster.setAlignmentX(CENTER_ALIGNMENT);
         detailPoster.setPreferredSize(new Dimension(220, 330));
@@ -96,7 +114,7 @@ public class WatchversePanel extends JPanel {
         detailGenre.setAlignmentX(CENTER_ALIGNMENT);
 
         deleteButton = new JButton("Remove Item");
-        deleteButton.setBackground(new Color(212, 34, 53));
+        deleteButton.setBackground(UIConstants.DELETE);
         deleteButton.setForeground(Color.WHITE);
         deleteButton.setFocusPainted(false);
         deleteButton.setAlignmentX(CENTER_ALIGNMENT);
@@ -226,17 +244,6 @@ public class WatchversePanel extends JPanel {
         return card;
     }
 
-    private void setImageWhite(JButton card) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                ImageIcon whiteIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/white.jpg")));
-                Image whiteImg = whiteIcon.getImage().getScaledInstance(200, 230, Image.SCALE_SMOOTH);
-                card.setIcon(new ImageIcon(whiteImg));
-            } catch (Exception e) {
-                System.err.println("Corrupted image file");
-            }
-        });
-    }
     private void showItemDetails(Item item) {
         this.currentSelectedItem = item;
         detailTitle.setText("<html><center style='width:200px;'>" + item.title() + "</center></html>");
@@ -275,7 +282,6 @@ public class WatchversePanel extends JPanel {
 
         JPanel searchContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
         searchContainer.setOpaque(false);
-        searchBar.setPreferredSize(new Dimension(500, 40));
         searchContainer.add(searchBar);
         header.add(searchContainer, BorderLayout.CENTER);
 
@@ -290,7 +296,7 @@ public class WatchversePanel extends JPanel {
     private void buildWestPanel() {
         JPanel west = new JPanel();
         west.setLayout(new BoxLayout(west, BoxLayout.Y_AXIS));
-        west.setPreferredSize(new Dimension(300, 0));
+        west.setPreferredSize(new Dimension(330, 0));
         west.setOpaque(false);
         west.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 15));
 
@@ -298,24 +304,30 @@ public class WatchversePanel extends JPanel {
         west.add(titleWithAdButton("My Watchlists", () -> {
             new AddWatchlist(frame).setVisible(true);
             refreshWatchlists();
-        }, "Add new list"));
+        }, "Add new list", "+"));
         west.add(Box.createVerticalStrut(10));
+
         west.add(new JScrollPane(watchlists));
 
         // Groups
         west.add(Box.createVerticalStrut(30));
-        west.add(titleWithAdButton("Groups", this::handleGroupOptions, "Manage groups"));
+        west.add(titleWithAdButton("Groups", this::handleGroupOptions, "Manage groups","+"));
         west.add(Box.createVerticalStrut(10));
         west.add(new JScrollPane(groups));
 
         // Discover
         west.add(Box.createVerticalStrut(30));
-        JLabel discoverTitle = new JLabel("Discover");
-        discoverTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        west.add(discoverTitle);
+        JPanel discoverHeader = titleWithAdButton("Discover", () -> {
+            System.out.println("Searching public lists...");
+        }, "Search public lists", "🔍");
+
+
+        west.add(discoverHeader);
         west.add(Box.createVerticalStrut(10));
         west.add(discoverSearchBar);
+
         west.add(Box.createVerticalStrut(10));
+
         west.add(new JScrollPane(publicWatchlists));
 
         add(west, BorderLayout.WEST);
@@ -348,7 +360,8 @@ public class WatchversePanel extends JPanel {
         JPanel emptyState = new JPanel(new GridBagLayout());
         emptyState.setOpaque(false);
         JLabel label = new JLabel("Select a list or search content in searchbar to see contents");
-        label.setForeground(Color.GRAY);
+        UIMaker.styleLabel(label, UIConstants.HINT_GRAY);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 30));
         emptyState.add(label);
 
         //LOADING STATE
@@ -358,7 +371,9 @@ public class WatchversePanel extends JPanel {
             ImageIcon loadingGif = new ImageIcon(Objects.requireNonNull(getClass().getResource("/loading.gif")));
             loadingState.add(new JLabel(loadingGif));
         } catch (Exception e) {
-            loadingState.add(new JLabel("Searching... Please wait."));
+            JLabel loadingLabel = new JLabel("Searching... Please wait.");
+            UIMaker.styleLabel(loadingLabel, UIConstants.HINT_GRAY);
+            loadingState.add(loadingLabel);
         }
 
         //CONTENT STATE
@@ -407,16 +422,18 @@ public class WatchversePanel extends JPanel {
         add(eastPanel, BorderLayout.EAST);
     }
 
-    private JPanel titleWithAdButton(String title, Runnable onAdd, String help) {
+    private JPanel titleWithAdButton(String title, Runnable onAdd, String help, String btnText) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        panel.setMaximumSize(new Dimension(UIConstants.COMP_SIZE.width, 35));
+        panel.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
-        JButton addBtn = new JButton("+");
+        JButton addBtn = new JButton(btnText);
         addBtn.setToolTipText(help);
+        addBtn.setFocusPainted(false);
         addBtn.addActionListener(e -> onAdd.run());
 
         panel.add(titleLabel, BorderLayout.WEST);
@@ -425,7 +442,6 @@ public class WatchversePanel extends JPanel {
     }
 
     private void performMovieSearch(String query) {
-        // 1. Arama başlar başlamaz dev loading gifini göster
         centerLayout.show(centerPanel, "LOADING");
 
         new Thread(() -> {
