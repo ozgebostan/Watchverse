@@ -9,7 +9,7 @@ import java.net.Socket;
  */
 public class WatchverseServer {
 
-    private static final int PORT = 12345;
+    private static final int PORT = 567;
 
     public static void main(String[] args) {
         System.setProperty("java.net.preferIPv4Stack", "true");

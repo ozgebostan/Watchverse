@@ -9,6 +9,7 @@ import Server.Services.WatchlistService;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -28,6 +29,7 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
+
         // ObjectOutputStream first
         try (ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
              ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
@@ -44,14 +46,18 @@ public class ClientHandler implements Runnable {
                     case "LOGIN" -> handleLogin(out, parts);
                     case "REGISTER" -> handleRegister(out, parts);
                     case "ADD_ITEM" -> handleAddItem(out, parts);
+                    case "GET_GROUPS" -> sendResponse(out, new ArrayList<String>());
+                    case "GET_GROUP_ITEMS" -> sendResponse(out, new ArrayList<Item>());
                     case "GET_LIST_ITEMS" -> handleGetItems(out, parts);
                     case "REMOVE_ITEM" -> handleRemoveItem(out, parts);
                     case "CREATE_LIST" -> handleCreateList(out, parts);
-                    case "GET_MY_LISTS" -> handleGetMyLists(out, parts);
+                    case "GET_WATCHLISTS" -> handleGetMyLists(out, parts);
                     case "DELETE_LIST" -> handleDeleteList(out, parts);
                     case "DELETE_ACCOUNT" -> {
                         if (parts.length >= 3) {
                             sendResponse(out, authService.deleteAccount(parts[1], parts[2]).toString());
+                        } else {
+                            sendResponse(out, "ERROR: Missing parameters");
                         }
                     }
                     case "JOIN_GROUP" -> handleJoinGroup(out, parts);
@@ -59,13 +65,18 @@ public class ClientHandler implements Runnable {
                     case "CHANGE_PASSWORD" -> {
                         if (parts.length >= 4) {
                             sendResponse(out, authService.forgotPassword(parts[1], parts[3]).toString());
+                        } else {
+                            sendResponse(out, "ERROR: Missing parameters");
                         }
                     }
                     case "CHECK_USER" -> sendResponse(out, authService.isUserExists(parts[1]) ? "EXISTS" : "NOT_FOUND");
                     case "GET_QUESTION" -> sendResponse(out, authService.getSecurityQuestion(parts[1]));
                     case "VERIFY_ANSWER" -> sendResponse(out, authService.verifySecurityAnswer(parts[1], parts[2]).toString());
                     case "RESET_PASSWORD" -> sendResponse(out, authService.forgotPassword(parts[1], parts[2]).toString());
-                    default -> System.out.println("Unknown command: " + command);
+                    default -> {
+                        System.out.println("Unknown command: " + command);
+                        sendResponse(out, new ArrayList<>());
+                    }
                 }
             }
         } catch (Exception e) {
@@ -100,13 +111,33 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleSearch(ObjectOutputStream out, String[] parts) throws Exception {
-        if (parts.length >= 2) {
+    private void handleSearch(ObjectOutputStream out, String[] parts) {
+        try {
+            System.out.println("[SERVER] Arama basladi: " + parts[1]);
+
             String title = parts[1];
             String type = (parts.length >= 3) ? parts[2] : "movie";
+
+            // 🔍 API'YE GİTMEDEN ÖNCE BİR KONTROL
+            System.out.println("[SERVER] ApiManager cagrilıyor...");
             String jsonResponse = apiManager.search(title, type);
+
+            if (jsonResponse == null) {
+                System.err.println("[SERVER] HATA: TMDB'den cevap bos dondu!");
+                sendResponse(out, new ArrayList<Item>()); // Boş liste gönder ki Client beklemesin
+                return;
+            }
+
+            System.out.println("[SERVER] JSON ayristiriliyor...");
             List<Item> results = apiManager.parseResponse(jsonResponse, type);
+
+            System.out.println("[SERVER] Islem tamam, " + results.size() + " film gonderiliyor.");
             sendResponse(out, results);
+
+        } catch (Exception e) {
+            System.err.println("[SERVER] handleSearch icinde KRITIK HATA!");
+            e.printStackTrace(); // Bu hata mesajı her şeyi acıklayacak
+            try { sendResponse(out, new ArrayList<Item>()); } catch (Exception ignored) {}
         }
     }
 

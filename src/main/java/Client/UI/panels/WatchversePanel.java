@@ -17,7 +17,9 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 
 public class WatchversePanel extends JPanel {
     private final WatchverseFrame frame;
@@ -49,7 +51,6 @@ public class WatchversePanel extends JPanel {
         setComponentLayouts();
         setEvents();
 
-        // Başlangıç verilerini çek
         refreshWatchlists();
         refreshGroups();
         loadPublicWatchlists();
@@ -160,18 +161,14 @@ public class WatchversePanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             centerScreen.removeAll();
 
-            if (items == null || items.isEmpty()) {
+            if (items != null && !items.isEmpty()) {
                 items.sort((a, b) -> {
                     double scoreA = (double) a.priority() / Math.max(1, a.duration());
                     double scoreB = (double) b.priority() / Math.max(1, b.duration());
 
                     int comparison = Double.compare(scoreB, scoreA);
 
-                    if (comparison == 0) {
-                        return a.title().compareToIgnoreCase(b.title());
-                    }
-
-                    return comparison;
+                    return (comparison == 0) ? a.title().compareToIgnoreCase(b.title()) : comparison;
                 });
 
                 for (Item item : items) {
@@ -187,23 +184,59 @@ public class WatchversePanel extends JPanel {
     }
 
     private JButton createMovieCard(Item item) {
-        String pTag = switch (item.priority()) {
-            case 3 -> "[HIGH]";
-            case 2 -> "[MID]";
-            default -> "[LOW]";
-        };
-
-        JButton card = new JButton("<html><center><b>" + item.title() + "</b><br>"
-                + "<font color='red'>" + pTag + "</font> | "
-                + item.duration() + " min</center></html>");
-
-        card.setPreferredSize(new Dimension(150, 210));
+        JButton card = new JButton();
+        card.setLayout(new BorderLayout());
+        card.setPreferredSize(new Dimension(180, 280));
         card.setBackground(Color.WHITE);
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        card.addActionListener(e -> showItemDetails(item));
+        card.setVerticalTextPosition(SwingConstants.BOTTOM);
+        card.setHorizontalTextPosition(SwingConstants.CENTER);
+
+
+        ImageIcon whiteIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/white.jpg")));
+        Image whiteImg = whiteIcon.getImage().getScaledInstance(200, 230, Image.SCALE_SMOOTH);
+        card.setIcon(new ImageIcon(whiteImg));
+
+        if (item.posterUrl() != null && !item.posterUrl().contains("null")) {
+            new Thread(() -> {
+                try {
+                    URL url = new URL(item.posterUrl());
+                    ImageIcon icon = new ImageIcon(url);
+
+                    if (icon.getIconWidth() > 0) {
+                        Image img = icon.getImage().getScaledInstance(200, 230, Image.SCALE_SMOOTH);
+                        SwingUtilities.invokeLater(() -> {
+                            card.setIcon(new ImageIcon(img));
+                        });
+                    }
+                } catch (Exception ignore) {
+                    //no poster
+                }
+            }).start();
+        }
+        String labelText = "<html><center><b>" + item.title() + "</b><br>"
+                + "<font color='gray'>" + item.genres() + "</font></center></html>";
+
+        card.setText(labelText);
+
+        card.addActionListener(e -> {
+            new AddMovieToListDialog(frame, item).setVisible(true);
+        });
+
         return card;
     }
 
+    private void setImageWhite(JButton card) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                ImageIcon whiteIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/white.jpg")));
+                Image whiteImg = whiteIcon.getImage().getScaledInstance(200, 230, Image.SCALE_SMOOTH);
+                card.setIcon(new ImageIcon(whiteImg));
+            } catch (Exception e) {
+                System.err.println("Corrupted image file");
+            }
+        });
+    }
     private void showItemDetails(Item item) {
         this.currentSelectedItem = item;
         detailTitle.setText("<html><center style='width:200px;'>" + item.title() + "</center></html>");
@@ -311,12 +344,24 @@ public class WatchversePanel extends JPanel {
         centerPanel = new JPanel(centerLayout);
         centerPanel.setOpaque(false);
 
+        //EMPTY STATE
         JPanel emptyState = new JPanel(new GridBagLayout());
         emptyState.setOpaque(false);
-        JLabel label = new JLabel("Select a list to see content");
+        JLabel label = new JLabel("Select a list or search content in searchbar to see contents");
         label.setForeground(Color.GRAY);
         emptyState.add(label);
 
+        //LOADING STATE
+        JPanel loadingState = new JPanel(new GridBagLayout());
+        loadingState.setOpaque(false);
+        try {
+            ImageIcon loadingGif = new ImageIcon(Objects.requireNonNull(getClass().getResource("/loading.gif")));
+            loadingState.add(new JLabel(loadingGif));
+        } catch (Exception e) {
+            loadingState.add(new JLabel("Searching... Please wait."));
+        }
+
+        //CONTENT STATE
         centerScreen = new JPanel(new GridLayout(0, 4, 15, 15));
         centerScreen.setOpaque(false);
 
@@ -331,6 +376,7 @@ public class WatchversePanel extends JPanel {
         scroll.getVerticalScrollBar().setUnitIncrement(16);
 
         centerPanel.add(emptyState, "EMPTY");
+        centerPanel.add(loadingState, "LOADING");
         centerPanel.add(scroll, "CONTENT");
 
         add(centerPanel, BorderLayout.CENTER);
@@ -379,33 +425,34 @@ public class WatchversePanel extends JPanel {
     }
 
     private void performMovieSearch(String query) {
-        centerLayout.show(centerPanel, "EMPTY");
+        // 1. Arama başlar başlamaz dev loading gifini göster
+        centerLayout.show(centerPanel, "LOADING");
 
         new Thread(() -> {
-            Object res = request("SEARCH_MOVIES###" + query);
-
-            if (res instanceof List) {
-                List<Item> results = (List<Item>) res;
+            try {
+                Object res = request("SEARCH###" + query + "###movie");
 
                 SwingUtilities.invokeLater(() -> {
                     centerScreen.removeAll();
-                    if (results.isEmpty()) {
-                        centerLayout.show(centerPanel, "EMPTY");
-                    } else {
-                        for (Item item : results) {
-                            JButton card = createMovieCard(item);
 
-                            card.addActionListener(ev -> {
-                                new AddMovieToListDialog(frame, item).setVisible(true);
-                            });
-
-                            centerScreen.add(card);
+                    if (res instanceof List<?> results && !results.isEmpty()) {
+                        for (Object obj : results) {
+                            if (obj instanceof Item item) {
+                                JButton card = createMovieCard(item);
+                                centerScreen.add(card);
+                            }
                         }
                         centerLayout.show(centerPanel, "CONTENT");
+                    } else {
+                        centerLayout.show(centerPanel, "EMPTY");
                     }
                     centerScreen.revalidate();
                     centerScreen.repaint();
                 });
+
+            } catch (Exception e) {
+                System.err.println("[ERROR] Arama sirasinda hata: " + e.getMessage());
+                SwingUtilities.invokeLater(() -> centerLayout.show(centerPanel, "EMPTY"));
             }
         }).start();
     }

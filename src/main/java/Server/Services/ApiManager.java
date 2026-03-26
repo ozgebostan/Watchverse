@@ -22,7 +22,7 @@ import java.util.List;
 public class ApiManager {
 
     private static final String SEARCH_BASE_URL = "https://api.themoviedb.org/3/search/";
-    private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w185"; // Biraz daha kaliteli (w185) tercih edilebilir
+    private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w185";
     private String apiKey;
 
     public ApiManager() {
@@ -30,7 +30,7 @@ public class ApiManager {
         this.apiKey = dotenv.get("TMDB_API_KEY");
 
         if (this.apiKey == null || this.apiKey.isEmpty()) {
-            System.err.println("⚠️ KRİTİK HATA: TMDB_API_KEY .env dosyasında bulunamadı!");
+            System.err.println("Error: Couldn't found the TMDB_API_KEY .env file!");
         }
     }
 
@@ -40,6 +40,8 @@ public class ApiManager {
      * Executes a search request to TMDB.
      */
     public String search(String query, String type) {
+
+        System.out.println("[API] Kullanilan Key: " + apiKey);
         if (apiKey == null || apiKey.isEmpty()) return null;
 
         HttpURLConnection connection = null;
@@ -119,8 +121,8 @@ public class ApiManager {
                         finalGenres,
                         apiId,
                         fullPosterUrl,
-                        1, // Varsayılan Öncelik: Düşük
-                        0  // Varsayılan Süre: 0 (Henüz bilinmiyor)
+                        1,
+                        0
                 ));
             }
         } catch (Exception e) {

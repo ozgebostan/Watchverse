@@ -14,7 +14,7 @@ public class SocketManager {
     private ObjectInputStream in;
 
     private final String HOST = "localhost";
-    private final int PORT = 12345;
+    private final int PORT = 567;
 
 
     public static synchronized SocketManager getInstance() {
@@ -27,8 +27,13 @@ public class SocketManager {
     private SocketManager() {
         try {
             this.socket = new Socket(HOST, PORT);
+            // ÖNCE OUTPUT
             this.out = new ObjectOutputStream(socket.getOutputStream());
+            this.out.flush(); // Hemen boşalt ki karşı taraf InputStream'i açabilsin
+
+            // SONRA INPUT
             this.in = new ObjectInputStream(socket.getInputStream());
+
             System.out.println("Connection Successful!");
         } catch (Exception e) {
             System.err.println("Connection error: " + e.getMessage());
