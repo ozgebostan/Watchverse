@@ -41,6 +41,7 @@ public class WatchversePanel extends JPanel {
     private JButton deleteButton;
     private Item currentSelectedItem;
     private JPopupMenu profileMenu;
+    private JPopupMenu groupPopMenu;
 
     public WatchversePanel(WatchverseFrame frame) {
         this.frame = frame;
@@ -62,6 +63,7 @@ public class WatchversePanel extends JPanel {
         String currentUser = ClientUserSession.getInstance().getUsername();
         String formattedName = currentUser.substring(0, 1).toUpperCase() + currentUser.substring(1);
 
+        //WEST PANEL COMPONENTS
         watchlistModel = new DefaultListModel<>();
         watchlists = new JList<>(watchlistModel);
         groupModel = new DefaultListModel<>();
@@ -70,12 +72,23 @@ public class WatchversePanel extends JPanel {
         publicWatchlists = new JList<>(publicListModel);
 
         watchlists.setAlignmentX(LEFT_ALIGNMENT);
+        watchlists.setFont(UIConstants.LABEL_FONT);
+
         publicWatchlists.setAlignmentX(LEFT_ALIGNMENT);
+        publicWatchlists.setFont(UIConstants.LABEL_FONT);
 
-        searchBar = new JTextField(SEARCH_HINT);
-        UIMaker.styleField(searchBar, true);
-        searchBar.setPreferredSize(new Dimension(740, 40));
+        groups.setAlignmentX(LEFT_ALIGNMENT);
+        groups.setFont(UIConstants.LABEL_FONT);
 
+        groupPopMenu = new JPopupMenu();
+        JMenuItem deleteGroup = new JMenuItem();
+        JMenuItem createGroupCode = new JMenuItem();
+
+        groupPopMenu.add(deleteGroup);
+        groupPopMenu.add(createGroupCode);
+
+
+        //Listeners for JMenu
 
         discoverSearchBar = new JTextField("Discover other watchlists...");
         UIMaker.styleField(discoverSearchBar, true);
@@ -85,7 +98,12 @@ public class WatchversePanel extends JPanel {
 
         discoverSearchBar.setAlignmentX(LEFT_ALIGNMENT);
 
+        //NORTH PANEL COMPONENTS
         welcomeLabel = new JLabel("Welcome " + formattedName);
+
+        searchBar = new JTextField(SEARCH_HINT);
+        UIMaker.styleField(searchBar, true);
+        searchBar.setPreferredSize(new Dimension(740, 40));
 
         profileButton = new JButton(String.valueOf(formattedName.charAt(0)));
         profileButton.setFocusPainted(false);
@@ -112,7 +130,7 @@ public class WatchversePanel extends JPanel {
         profileMenu.addSeparator();
         profileMenu.add(logoutItem);
 
-        // Details Panel items
+        // Details Panel items, EAST PANEL
         detailPoster = new JLabel("", SwingConstants.CENTER);
         detailPoster.setAlignmentX(CENTER_ALIGNMENT);
         detailPoster.setPreferredSize(new Dimension(220, 330));
@@ -151,12 +169,13 @@ public class WatchversePanel extends JPanel {
 
     public void refreshGroups() {
         new Thread(() -> {
-            Object res = request("GET_GROUPS###" + ClientUserSession.getInstance().getUsername());
+            Object res = request("GET_MY_GROUPS###" + ClientUserSession.getInstance().getUsername());
             if (res instanceof List) {
                 SwingUtilities.invokeLater(() -> {
                     groupModel.clear();
                     ((List<String>) res).forEach(groupModel::addElement);
                 });
+
             }
         }).start();
     }
@@ -540,9 +559,30 @@ public class WatchversePanel extends JPanel {
             if (!e.getValueIsAdjusting() && groups.getSelectedValue() != null) {
                 watchlists.clearSelection();
                 publicWatchlists.clearSelection();
-                deleteButton.setVisible(false);
-                Object res = request("GET_GROUP_ITEMS###" + groups.getSelectedValue());
-                if (res instanceof List) displayItems((List<Item>) res);
+
+                new Thread(() -> {
+                    String groupName = groups.getSelectedValue();
+                    String username = ClientUserSession.getInstance().getUsername();
+
+                    Object res = request("GET_GROUP_ITEMS###" + username + "###" + groupName);
+
+                    if (res instanceof List) {
+                        SwingUtilities.invokeLater(() -> displayItems((List<Item>) res));
+                    }
+                }).start();
+            }
+        });
+
+        groups.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int index = groups.locationToIndex(e.getPoint());
+                    if (index != -1) {
+                        groups.setSelectedIndex(index);
+                        groupPopMenu.show(groups, e.getX(), e.getY());
+                    }
+                }
             }
         });
 

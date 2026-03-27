@@ -59,7 +59,11 @@ public class ClientHandler implements Runnable {
                             sendResponse(out, "ERROR: Missing parameters");
                         }
                     }
+                    case "CREATE_GROUP" -> handleCreateGroup(out, parts);
+                    case "GET_GROUP_CODE" -> handleGetGroupCode(out, parts);
+                    case "GET_MY_GROUPS" -> handleGetUserGroups(out, parts);
                     case "JOIN_GROUP" -> handleJoinGroup(out, parts);
+                    case "DELETE GROUP" -> handleDeleteGroup(out, parts);
                     case "GET_PUBLIC_LISTS" -> sendResponse(out, watchlistService.getPublicWatchlists());
                     case "CHANGE_PASSWORD" -> {
                         if (parts.length >= 4) {
@@ -127,7 +131,7 @@ public class ClientHandler implements Runnable {
 
             List<Item> results = apiManager.parseResponse(jsonResponse, type);
 
-            System.out.println("[SERVER] Operation completed, " + results.size() + " film gonderiliyor.");
+            System.out.println("[SERVER] Operation completed, " + results.size() + " movies/series sent.");
             sendResponse(out, results);
 
         } catch (Exception e) {
@@ -176,6 +180,30 @@ public class ClientHandler implements Runnable {
     private void handleJoinGroup(ObjectOutputStream out, String[] parts) throws Exception {
         if (parts.length >= 3) {
             sendResponse(out, watchlistService.joinGroup(parts[1], parts[2]));
+        }
+    }
+
+    private void handleCreateGroup(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 3) {
+            sendResponse(out, watchlistService.createGroup(parts[1], parts[2]) ? "SUCCESS" : "FAIL");
+        }
+    }
+
+    private void handleGetUserGroups(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 2) {
+            sendResponse(out, watchlistService.getUserGroups(parts[1]));
+        }
+    }
+
+    private void handleDeleteGroup(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 3) {
+            sendResponse(out, watchlistService.deleteGroup(parts[1], parts[2]) ? "SUCCESS" : "FAIL");
+        }
+    }
+
+    private void handleGetGroupCode(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 3) {
+            sendResponse(out, watchlistService.getGroupCode(parts[1], parts[2]));
         }
     }
 
