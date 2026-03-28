@@ -22,6 +22,7 @@ public class SettingsDialog extends BaseDialog {
         super(parent, new Dimension(400, 450), "Settings", "Save Changes");
         this.currentUsername = ClientUserSession.getInstance().getUsername();
         this.frame = parent;
+        buildUI();
     }
 
     @Override
@@ -56,20 +57,7 @@ public class SettingsDialog extends BaseDialog {
         dangerLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         UIMaker.styleLabel(dangerLabel, UIConstants.DELETE);
 
-        deleteAccountButton = new JButton("Delete Account");
-        deleteAccountButton.setMaximumSize(UIConstants.COMP_SIZE);
-        deleteAccountButton.setPreferredSize(UIConstants.COMP_SIZE);
-        deleteAccountButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        deleteAccountButton.setFont(UIConstants.LABEL_FONT);
-        deleteAccountButton.setBackground(UIConstants.DELETE);
-        deleteAccountButton.setForeground(Color.WHITE);
-
-        deleteAccountButton.setFocusPainted(false);
-        deleteAccountButton.setBorderPainted(false);
-        deleteAccountButton.setContentAreaFilled(true);
-        deleteAccountButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
+        UIMaker.styleButton(deleteAccountButton, UIConstants.COMP_SIZE, UIConstants.DELETE);
 
         deleteAccountButton.addActionListener(e -> onDeleteAccount());
 

@@ -64,14 +64,15 @@ public final class UIMaker {
         }
     }
 
-    public static void styleButton(JButton button, Dimension dimensions) {
+
+    public static void styleButton(JButton button, Dimension dimensions, Color color) {
         button.setMaximumSize(new Dimension(dimensions.width, dimensions.height));
         button.setPreferredSize(new Dimension(dimensions.width, dimensions.height));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         button.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
-        Color rosePink = new Color(175, 110, 117);
+        Color rosePink = new Color(color.getRGB());
         button.setBackground(rosePink);
         button.setForeground(Color.WHITE);
 

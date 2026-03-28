@@ -52,6 +52,7 @@ public class ClientHandler implements Runnable {
                     case "REMOVE_ITEM" -> handleRemoveItem(out, parts);
                     case "CREATE_LIST" -> handleCreateList(out, parts);
                     case "GET_WATCHLISTS" -> handleGetMyLists(out, parts);
+                    case "GET_RUNTIME" -> handleGetRuntime(out, parts);
                     case "DELETE_LIST" -> handleDeleteList(out, parts);
                     case "DELETE_ACCOUNT" -> {
                         if (parts.length >= 3) {
@@ -120,6 +121,19 @@ public class ClientHandler implements Runnable {
 
             Item newItem = new Item(title, type, genres, apiId, posterUrl, priority, duration);
             sendResponse(out, watchlistService.addItem(user, list, newItem));
+        }
+    }
+
+    private void handleGetRuntime(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 3) {
+            String apiId = parts[1];
+            String type = parts[2];
+
+            int runtime = apiManager.fetchRuntime(apiId, type);
+
+            sendResponse(out, runtime);
+        } else {
+            sendResponse(out, 0);
         }
     }
 

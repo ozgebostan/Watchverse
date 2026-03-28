@@ -27,11 +27,9 @@ public class SocketManager {
     private SocketManager() {
         try {
             this.socket = new Socket(HOST, PORT);
-            // ÖNCE OUTPUT
             this.out = new ObjectOutputStream(socket.getOutputStream());
-            this.out.flush(); // Hemen boşalt ki karşı taraf InputStream'i açabilsin
+            this.out.flush();
 
-            // SONRA INPUT
             this.in = new ObjectInputStream(socket.getInputStream());
 
             System.out.println("Connection Successful!");

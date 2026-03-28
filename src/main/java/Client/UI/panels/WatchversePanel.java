@@ -37,6 +37,7 @@ public class WatchversePanel extends JPanel {
     private JPanel centerPanel, centerScreen, eastPanel;
     private CardLayout centerLayout, eastLayout;
     private JLabel detailPoster, detailTitle, detailGenre;
+    private JLabel detailDuration, detailPriority, detailDate;
     private JButton deleteButton;
     private Item currentSelectedItem;
     private JPopupMenu profileMenu;
@@ -168,11 +169,9 @@ public class WatchversePanel extends JPanel {
         detailGenre.setAlignmentX(CENTER_ALIGNMENT);
 
         deleteButton = new JButton("Remove Item");
-        deleteButton.setBackground(UIConstants.DELETE);
-        deleteButton.setForeground(Color.WHITE);
-        deleteButton.setFocusPainted(false);
-        deleteButton.setAlignmentX(CENTER_ALIGNMENT);
-        deleteButton.setVisible(false);
+        UIMaker.styleButton(deleteButton, UIConstants.COMP_SIZE, UIConstants.DELETE);
+
+
     }
 
     private Object request(String cmd) {
@@ -257,6 +256,7 @@ public class WatchversePanel extends JPanel {
     }
 
     private JButton createMovieCard(Item item) {
+        //Styling
         JButton card = new JButton();
         card.setLayout(new BorderLayout());
         card.setPreferredSize(new Dimension(180, 280));
@@ -266,6 +266,7 @@ public class WatchversePanel extends JPanel {
         card.setHorizontalTextPosition(SwingConstants.CENTER);
 
 
+        //Poster loading
         ImageIcon whiteIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/white.jpg")));
         Image whiteImg = whiteIcon.getImage().getScaledInstance(200, 230, Image.SCALE_SMOOTH);
         card.setIcon(new ImageIcon(whiteImg));
@@ -293,7 +294,12 @@ public class WatchversePanel extends JPanel {
         card.setText(labelText);
 
         card.addActionListener(e -> {
-            new AddMovieToListDialog(frame, item).setVisible(true);
+            //for details panel after adding item to the list
+            if (currentViewedListName != null && !currentViewedListName.isEmpty()) {
+                showItemDetails(item);
+            } else {
+                new AddMovieToListDialog(frame, item).setVisible(true);
+            }
         });
 
         return card;
@@ -303,6 +309,13 @@ public class WatchversePanel extends JPanel {
         this.currentSelectedItem = item;
         detailTitle.setText("<html><center style='width:200px;'>" + item.title() + "</center></html>");
         detailGenre.setText(item.genres());
+
+        String durationText = (item.duration() > 0) ? item.duration() + " Minutes" : "Duration Unknown";
+        detailDuration.setText("<html><b>Duration:</b> " + durationText + "</html>");
+
+        String priorityText = (item.priority() == 3) ? "High" : (item.priority() == 2) ? "Medium" : "Low";
+        detailPriority.setText("<html><b>Priority:</b> " + priorityText + "</html>");
+
         deleteButton.setVisible(currentViewedListId == -1);
 
         new Thread(() -> {
@@ -475,8 +488,26 @@ public class WatchversePanel extends JPanel {
         itemDetailPanel.add(detailTitle);
         itemDetailPanel.add(Box.createVerticalStrut(10));
         itemDetailPanel.add(detailGenre);
+        itemDetailPanel.add(Box.createVerticalStrut(20));
+
+        detailDuration = new JLabel();
+        detailDuration.setAlignmentX(CENTER_ALIGNMENT);
+        detailDuration.setForeground(Color.DARK_GRAY);
+        itemDetailPanel.add(detailDuration);
+
+        detailPriority = new JLabel();
+        detailPriority.setAlignmentX(CENTER_ALIGNMENT);
+        detailPriority.setForeground(Color.DARK_GRAY);
+        itemDetailPanel.add(detailPriority);
+
+        detailDate = new JLabel();
+        detailDate.setAlignmentX(CENTER_ALIGNMENT);
+        detailDate.setForeground(Color.DARK_GRAY);
+        itemDetailPanel.add(detailDate);
+
         itemDetailPanel.add(Box.createVerticalStrut(30));
         itemDetailPanel.add(deleteButton);
+
 
         eastPanel.add(new JPanel(), "EMPTY");
         eastPanel.add(itemDetailPanel, "ITEM_DETAILS");
@@ -510,6 +541,8 @@ public class WatchversePanel extends JPanel {
     }
 
     private void performMovieSearch(String query) {
+        this.currentViewedListName = null;
+
         centerLayout.show(centerPanel, "LOADING");
 
         new Thread(() -> {

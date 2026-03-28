@@ -23,6 +23,9 @@ public record Item(
         duration = Math.max(0, duration);
     }
 
+    public Item withRealDuration(int realDuration) {
+        return new Item(title, type, genres, apiId, posterUrl, priority, realDuration);
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

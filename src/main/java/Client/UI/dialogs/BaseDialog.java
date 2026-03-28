@@ -10,12 +10,21 @@ public abstract class BaseDialog extends JDialog {
     protected JButton confirmButton;
     protected JButton cancelButton;
 
+    private String confirmButtonText;
+
     public BaseDialog(JFrame parent, Dimension size, String title, String confirmButtonText) {
         super(parent, title, true);
+        this.confirmButtonText = confirmButtonText;
         setSize(size);
         setResizable(false);
         setLocationRelativeTo(parent);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+    }
+
+    protected void buildUI() {
+        if (confirmButtonText == null) {
+            confirmButtonText = "OK"; //Default confirm
+        }
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));

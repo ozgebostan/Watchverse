@@ -133,7 +133,7 @@ public class RegisterPanel extends BaseAuthPanel {
         UIMaker.styleField(usernameField, true);
         UIMaker.stylePasswordField(passwordField, true);
         UIMaker.stylePasswordField(confirmPasswordField, true);
-        UIMaker.styleButton(nextButton, COMP_SIZE);
+        UIMaker.styleButton(nextButton, COMP_SIZE, ADD_BUTTON_COLOR);
         nextButton.setAlignmentX(CENTER_ALIGNMENT);
 
         UIMaker.styleComboBox(securityQuestionBox);
@@ -144,7 +144,7 @@ public class RegisterPanel extends BaseAuthPanel {
 
 
         //signup button
-        UIMaker.styleButton(signupButton, new Dimension(330, COMP_SIZE.height));
+        UIMaker.styleButton(signupButton, new Dimension(330, COMP_SIZE.height), ADD_BUTTON_COLOR);
 
     }
 

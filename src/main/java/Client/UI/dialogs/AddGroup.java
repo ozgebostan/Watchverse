@@ -14,6 +14,7 @@ public class AddGroup extends BaseDialog {
 
     public AddGroup(JFrame frame) {
         super(frame, new Dimension(400, 250) ,"Create Group", "Create");
+        buildUI();
     }
 
     @Override

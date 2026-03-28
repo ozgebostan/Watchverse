@@ -1,7 +1,6 @@
 package Client.UI.dialogs;
 
 import Client.Network.SocketManager;
-import Client.UI.utils.UIMaker;
 import Client.UI.utils.UIConstants;
 import Model.ClientUserSession;
 import Model.Item;
@@ -15,12 +14,20 @@ public class AddMovieToListDialog extends BaseDialog {
     private final Item movie;
     private JComboBox<String> watchlistSelector;
     private JComboBox<String> prioritySelector;
-    private JSpinner durationSpinner;
 
-    public AddMovieToListDialog(JFrame frame, Item movie) {
+    public AddMovieToListDialog(JFrame frame, Item searchResultMovie) {
         super(frame, new Dimension(400, 450), "Add Movie to Watchlist", "Add to List");
-        this.movie = movie;
 
+        String command = "GET_RUNTIME###" + searchResultMovie.apiId() + "###" + searchResultMovie.type().toLowerCase();
+
+        Object response = SocketManager.getInstance().sendRequest(command);
+
+        int realDuration = (response instanceof Integer && (Integer) response > 0)
+                ? (Integer) response : 120;
+
+        this.movie = searchResultMovie.withRealDuration(realDuration);
+
+        buildUI();
         loadUserWatchlists();
     }
 
@@ -29,7 +36,7 @@ public class AddMovieToListDialog extends BaseDialog {
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
 
         JLabel movieTitleLabel = new JLabel("<html><div style='text-align: center; width: 300px;'>" +
-                "Adding <b>" + movie.title() + "</b> to your collection.</div></html>");
+                "Adding <b>" + movie.title() + "</b> to your watchlist.</div></html>");
         movieTitleLabel.setAlignmentX(CENTER_ALIGNMENT);
 
         JLabel listLabel = new JLabel("Choose Watchlist:");
@@ -39,17 +46,18 @@ public class AddMovieToListDialog extends BaseDialog {
 
         JLabel priorityLabel = new JLabel("Priority Level:");
         priorityLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        String[] priorities = {"Low (1)", "⚡ Medium (2)", "High (3)"};
+        String[] priorities = {"Low (1)", "Medium (2)", "High (3)"};
         prioritySelector = new JComboBox<>(priorities);
         prioritySelector.setSelectedIndex(1);
         prioritySelector.setMaximumSize(new Dimension(300, 35));
 
-        JLabel durationLabel = new JLabel("Duration (Minutes):");
-        durationLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        JLabel durationLabel = new JLabel("Duration:");
+        durationLabel.setFont(UIConstants.LINK_FONT);
 
-        int initialDuration = (movie.duration() > 0) ? movie.duration() : 120;
-        durationSpinner = new JSpinner(new SpinnerNumberModel(initialDuration, 1, 1000, 5));
-        durationSpinner.setMaximumSize(new Dimension(300, 35));
+        JLabel durationValueLabel = new JLabel(movie.duration() + " Minutes");
+        durationValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        durationValueLabel.setForeground(UIConstants.HINT_GRAY);
+
 
         container.setBackground(UIConstants.MAIN_APP_COLOR);
         container.add(Box.createVerticalStrut(10));
@@ -70,7 +78,7 @@ public class AddMovieToListDialog extends BaseDialog {
 
         container.add(durationLabel);
         container.add(Box.createVerticalStrut(5));
-        container.add(durationSpinner);
+        container.add(durationValueLabel);
 
         container.add(Box.createVerticalGlue());
     }
@@ -85,12 +93,13 @@ public class AddMovieToListDialog extends BaseDialog {
         }
     }
 
+
     @Override
     protected void onConfirm() {
         String selectedListName = (String) watchlistSelector.getSelectedItem();
 
         int priorityValue = prioritySelector.getSelectedIndex() + 1;
-        int durationValue = (int) durationSpinner.getValue();
+        int durationValue = movie.duration();
 
         if (selectedListName == null) {
             JOptionPane.showMessageDialog(this, "Please select or create a watchlist first.");
@@ -98,12 +107,13 @@ public class AddMovieToListDialog extends BaseDialog {
         }
 
         // ADD_ITEM###USERNAME###LISTNAME###API_ID###TITLE###GENRES###POSTER_URL###PRIORITY###DURATION
-        String cmd = String.format("ADD_ITEM###%s###%s###%s###%s###%s###%s###%d###%d",
+        String cmd = String.format("ADD_ITEM###%s###%s###%s###%s###%s###%s###%s###%s",
                 ClientUserSession.getInstance().getUsername(),
                 selectedListName,
-                movie.apiId(),
                 movie.title(),
+                movie.type(),
                 movie.genres(),
+                movie.apiId(),
                 movie.posterUrl(),
                 priorityValue,
                 durationValue

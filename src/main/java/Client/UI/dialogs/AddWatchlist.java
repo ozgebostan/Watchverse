@@ -17,6 +17,7 @@ public class AddWatchlist extends BaseDialog {
 
     public AddWatchlist(JFrame frame) {
         super(frame, new Dimension(400, 350), "Create Watchlist", "Create");
+        buildUI();
     }
 
     @Override

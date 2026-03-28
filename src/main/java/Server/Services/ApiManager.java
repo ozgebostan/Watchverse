@@ -125,4 +125,45 @@ public class ApiManager {
         }
         return items;
     }
+
+    /**
+     * With film detail query fetches only the duration.
+     */
+    public int fetchRuntime(String apiId, String type) {
+        if (apiKey == null || apiKey.isEmpty() || apiId == null || apiId.equals("0")) return 0;
+
+        HttpURLConnection connection = null;
+        try {
+            String urlString = "https://api.themoviedb.org/3/" + type.toLowerCase() + "/" + apiId + "?api_key=" + apiKey;
+
+            URL url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+
+            if (connection.getResponseCode() == 200) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+
+                    JSONObject details = new JSONObject(response.toString());
+
+                    if (type.equalsIgnoreCase("movie")) {
+                        return details.optInt("runtime", 0);
+                    } else {
+                        JSONArray runtimes = details.optJSONArray("episode_run_time");
+                        return (runtimes != null && !runtimes.isEmpty()) ? runtimes.getInt(0) : 45;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Runtime Fetch Error: " + e.getMessage());
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+        return 0;
+    }
 }
