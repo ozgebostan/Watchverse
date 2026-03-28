@@ -52,13 +52,28 @@ public class AuthService {
     }
 
     public AuthResult forgotPassword(String username, String newPassword) {
+        if (!isPasswordStrong(newPassword)) {
+            return AuthResult.WEAK_PASSWORD;
+        }
+
         try {
-            return userDao.updatePassword(username, newPassword)
-                    ? AuthResult.PASSWORD_UPDATED : AuthResult.ERROR;
+            boolean isSuccess = userDao.updatePassword(username, newPassword);
+
+            if (isSuccess) {
+                return AuthResult.PASSWORD_UPDATED;
+            } else {
+                return AuthResult.SAME_PASSWORD;
+            }
         } catch (SQLException e) {
+            e.printStackTrace();
             return AuthResult.ERROR;
         }
     }
+
+        public boolean isPasswordStrong(String password) {
+            if (password == null || password.isEmpty()) return false;
+            return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,}$");
+        }
 
     public AuthResult deleteAccount(String username, String password) {
         try {

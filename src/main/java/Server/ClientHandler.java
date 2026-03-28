@@ -1,5 +1,6 @@
 package Server;
 
+import Model.AuthResult;
 import Model.Item;
 import Server.Services.ApiManager;
 import Server.Services.AuthService;
@@ -63,7 +64,7 @@ public class ClientHandler implements Runnable {
                     case "GET_GROUP_CODE" -> handleGetGroupCode(out, parts);
                     case "GET_MY_GROUPS" -> handleGetUserGroups(out, parts);
                     case "JOIN_GROUP" -> handleJoinGroup(out, parts);
-                    case "DELETE GROUP" -> handleDeleteGroup(out, parts);
+                    case "DELETE_GROUP" -> handleDeleteGroup(out, parts);
                     case "GET_PUBLIC_LISTS" -> sendResponse(out, watchlistService.getPublicWatchlists());
                     case "CHANGE_PASSWORD" -> {
                         if (parts.length >= 4) {
@@ -75,7 +76,15 @@ public class ClientHandler implements Runnable {
                     case "CHECK_USER" -> sendResponse(out, authService.isUserExists(parts[1]) ? "EXISTS" : "NOT_FOUND");
                     case "GET_QUESTION" -> sendResponse(out, authService.getSecurityQuestion(parts[1]));
                     case "VERIFY_ANSWER" -> sendResponse(out, authService.verifySecurityAnswer(parts[1], parts[2]).toString());
-                    case "RESET_PASSWORD" -> sendResponse(out, authService.forgotPassword(parts[1], parts[2]).toString());
+                    case "RESET_PASSWORD" -> {
+                        if (parts.length >= 3) {
+                            AuthResult result = authService.forgotPassword(parts[1], parts[2]);
+                            sendResponse(out, result.toString());
+                        } else {
+                            sendResponse(out, AuthResult.ERROR.toString());
+                        }
+                    }
+
                     default -> {
                         System.out.println("Unknown command: " + command);
                         sendResponse(out, new ArrayList<>());

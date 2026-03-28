@@ -1,6 +1,7 @@
 package Database.daos;
 
 import Database.DatabaseManager;
+import Model.AuthResult;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -93,15 +94,29 @@ public class UserDAO {
     }
 
     public boolean updatePassword(String username, String newPassword) throws SQLException {
-        String sql = "UPDATE users SET password = ? WHERE username = ?";
+        String checkSql = "SELECT password FROM users WHERE username = ?";
+        String updateSql = "UPDATE users SET password = ? WHERE username = ?";
 
-        try (Connection conn = dbManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dbManager.getConnection()) {
 
-            pstmt.setString(1, newPassword);
-            pstmt.setString(2, username);
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+                checkStmt.setString(1, username);
+                try (ResultSet rs = checkStmt.executeQuery()) {
+                    if (rs.next()) {
+                        String currentPassword = rs.getString("password");
+                        if (newPassword.equals(currentPassword)) {
+                            System.out.println("[DB] New password cannot be same as the old password!");
+                            return false;
+                        }
+                    }
+                }
+            }
 
-            return pstmt.executeUpdate() == 1;
+            try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                updateStmt.setString(1, newPassword);
+                updateStmt.setString(2, username);
+                return updateStmt.executeUpdate() == 1;
+            }
         }
     }
 

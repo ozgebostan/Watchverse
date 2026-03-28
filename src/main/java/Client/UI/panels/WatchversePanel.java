@@ -20,7 +20,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 public class WatchversePanel extends JPanel {
@@ -81,14 +80,39 @@ public class WatchversePanel extends JPanel {
         groups.setFont(UIConstants.LABEL_FONT);
 
         groupPopMenu = new JPopupMenu();
-        JMenuItem deleteGroup = new JMenuItem();
-        JMenuItem createGroupCode = new JMenuItem();
+        JMenuItem deleteGroup = new JMenuItem("Delete Group");
+        JMenuItem createGroupCode = new JMenuItem("Get Group Code");
+
+        deleteGroup.setFont(UIConstants.LINK_FONT);
+        createGroupCode.setFont(UIConstants.LINK_FONT);
 
         groupPopMenu.add(deleteGroup);
         groupPopMenu.add(createGroupCode);
 
 
-        //Listeners for JMenu
+        //Listeners for group menu items
+        deleteGroup.addActionListener(e -> {
+            String selected = groups.getSelectedValue();
+            if (selected != null) {
+                new Thread(() -> {
+                    Object res = request("DELETE_GROUP###" + currentUser + "###" + selected);
+                    if ("SUCCESS".equals(res)) refreshGroups();
+                }).start();
+            }
+        });
+
+        createGroupCode.addActionListener(e -> {
+            String selected = groups.getSelectedValue();
+            if (selected != null) {
+                new Thread(() -> {
+                    Object res = request("GET_GROUP_CODE###" + currentUser + "###" + selected);
+                    if (res instanceof String) {
+                        SwingUtilities.invokeLater(() ->
+                                JOptionPane.showMessageDialog(null, "Group Code: " + res));
+                    }
+                }).start();
+            }
+        });
 
         discoverSearchBar = new JTextField("Discover other watchlists...");
         UIMaker.styleField(discoverSearchBar, true);
@@ -511,7 +535,7 @@ public class WatchversePanel extends JPanel {
                 });
 
             } catch (Exception e) {
-                System.err.println("[ERROR] Arama sirasinda hata: " + e.getMessage());
+                System.err.println("[ERROR] Search error: " + e.getMessage());
                 SwingUtilities.invokeLater(() -> centerLayout.show(centerPanel, "EMPTY"));
             }
         }).start();
@@ -542,14 +566,15 @@ public class WatchversePanel extends JPanel {
                     loadWatchlist(selected);
                 } else if (SwingUtilities.isRightMouseButton(e)) {
                     watchlists.setSelectedIndex(index);
-                    JPopupMenu menu = new JPopupMenu();
-                    JMenuItem del = new JMenuItem("Delete List");
-                    del.addActionListener(ev -> {
+                    JPopupMenu watchlistMenu = new JPopupMenu();
+                    JMenuItem deleteWatchlist = new JMenuItem("Delete List");
+                    deleteWatchlist.setFont(UIConstants.LINK_FONT);
+                    deleteWatchlist.addActionListener(ev -> {
                         if (request("DELETE_LIST###" + ClientUserSession.getInstance().getUsername() + "###" + selected).equals("SUCCESS"))
                             refreshWatchlists();
                     });
-                    menu.add(del);
-                    menu.show(watchlists, e.getX(), e.getY());
+                    watchlistMenu.add(deleteWatchlist);
+                    watchlistMenu.show(watchlists, e.getX(), e.getY());
                 }
             }
         });

@@ -8,7 +8,6 @@ import Client.UI.utils.UIMaker;
 import Model.AuthResult;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class ResetPasswordPanel extends BaseAuthPanel {
     private JLabel passwordLabel;
@@ -81,9 +80,9 @@ public class ResetPasswordPanel extends BaseAuthPanel {
             return;
         }
 
-        if (!authClient.isPasswordStrong(newPass)) {
+        if (authClient.isPasswordStrong(newPass)) {
             JOptionPane.showMessageDialog(frame,
-                    "Password must be 8+ chars, 1 Upper, 1 Number.",
+                    "Password must be 6+ chars, 1 Upper, 1 Number.",
                     "Weak Password",
                     JOptionPane.WARNING_MESSAGE);
             return;

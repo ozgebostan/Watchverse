@@ -172,8 +172,8 @@ public class RegisterPanel extends BaseAuthPanel {
             showError("Passwords do not match.");
             return;
         }
-        if (!authClient.isPasswordStrong(pass)) {
-            JOptionPane.showMessageDialog(frame, "Password must be 8+ chars, 1 Upper, 1 Number.");
+        if (authClient.isPasswordStrong(pass)) {
+            JOptionPane.showMessageDialog(frame, "Password must be 6+ chars, 1 Upper, 1 Number.");
             return;
         }
         if (authClient.isUserExists(uName)) {

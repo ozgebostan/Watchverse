@@ -42,13 +42,18 @@ public class AuthClient {
 
     // 6. Reset password
     public AuthResult forgotPassword(String username, String newPassword) {
+        if (!isPasswordStrong(newPassword)) {
+            return AuthResult.WEAK_PASSWORD;
+        }
+
         Object response = SocketManager.getInstance().sendRequest("RESET_PASSWORD###" + username + "###" + newPassword);
         return parseResponse(response);
     }
 
     public boolean isPasswordStrong(String password) {
-        if (password == null) return false;
-        return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
+        if (password == null || password.isEmpty()) return false;
+
+        return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,}$");
     }
 
     private AuthResult parseResponse(Object response) {

@@ -18,10 +18,11 @@ public class WatchverseFrame extends BaseFrame {
     public WatchverseFrame() {
         super("Watchverse - " + ClientUserSession.getInstance().getUsername());
 
+        setResizable(true);
+
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         initializePanel();
-
         setVisible(true);
     }
 
