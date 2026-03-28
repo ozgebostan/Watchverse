@@ -70,15 +70,15 @@ public final class UIMaker {
         button.setPreferredSize(new Dimension(dimensions.width, dimensions.height));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        button.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        button.setFont(LABEL_FONT);
 
-        Color rosePink = new Color(color.getRGB());
-        button.setBackground(rosePink);
+        button.setBackground(color);
         button.setForeground(Color.WHITE);
 
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setContentAreaFilled(true);
+        button.setOpaque(true);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 

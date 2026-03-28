@@ -118,24 +118,32 @@ public class WatchlistService {
         }
     }
 
-    public boolean addListToGroup(String username, String groupName, String listName) {
+    public String addListToGroup(String username, String groupName, String listName) {
         try {
+            String visibility = getWatchlistVisibility(username, listName);
+
+            if ("private".equalsIgnoreCase(visibility)) {
+                return "ERROR:PRIVATE_LISTS_HIDDEN";
+            }
+
             return watchlistDao.addWatchlistToGroup(username, groupName, listName);
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            if (e.getErrorCode() == 19 || e.getMessage().contains("UNIQUE")) {
+                return "ERROR:ALREADY_EXISTS";
+            }
+            return "ERROR:" + e.getMessage();
         }
     }
 
-    public List<String> getGroupWatchlists(String username, String groupName) {
+
+    public List<PublicWatchlist> getGroupWatchlistObjects(String username, String groupName) {
         try {
-            return watchlistDao.getGroupWatchlists(username, groupName);
+            return watchlistDao.getGroupWatchlistObjects(username, groupName);
         } catch (SQLException e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
     }
-
     public String getGroupCode(String username, String groupName) {
         try {
             return watchlistDao.getGroupCode(username, groupName);
@@ -153,7 +161,6 @@ public class WatchlistService {
             return false;
         }
     }
-
     public String getWatchlistVisibility(String username, String listName) {
         try {
             return watchlistDao.getWatchlistVisibility(username, listName);

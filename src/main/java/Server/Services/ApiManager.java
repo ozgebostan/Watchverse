@@ -23,7 +23,7 @@ public class ApiManager {
 
     private static final String SEARCH_BASE_URL = "https://api.themoviedb.org/3/search/";
     private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w185";
-    private String apiKey;
+    private final String apiKey;
 
     public ApiManager() {
         Dotenv dotenv = Dotenv.load();
@@ -96,10 +96,11 @@ public class ApiManager {
 
                 // Poster Path handling
                 String posterPath = raw.optString("poster_path", null);
-                String fullPosterUrl = (posterPath != null && !posterPath.isEmpty())
+                String fullPosterUrl = (posterPath != null && !posterPath.equals("null") && !posterPath.isEmpty())
                         ? IMAGE_BASE_URL + posterPath
                         : null;
 
+                //Genre Mapping
                 List<Integer> genreIdList = new ArrayList<>();
                 JSONArray genreIdsJson = raw.optJSONArray("genre_ids");
                 if (genreIdsJson != null) {
@@ -109,6 +110,14 @@ public class ApiManager {
                 }
                 String finalGenres = GenreMapper.getGenreNames(genreIdList);
 
+                String rawDate = raw.optString("release_date", raw.optString("first_air_date", ""));
+                int releaseYear = 0;
+
+                if (rawDate.length() >= 4) {
+                    try {
+                        releaseYear = Integer.parseInt(rawDate.substring(0, 4));
+                    } catch (NumberFormatException ignored) {}
+                }
                 // Create the Item (Record style)
                 items.add(new Item(
                         title,
@@ -117,7 +126,9 @@ public class ApiManager {
                         apiId,
                         fullPosterUrl,
                         1,
-                        0
+                        0,
+                        releaseYear,
+                        null
                 ));
             }
         } catch (Exception e) {

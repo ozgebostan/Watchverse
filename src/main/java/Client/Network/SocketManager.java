@@ -51,11 +51,10 @@ public class SocketManager {
         try {
             out.writeObject(request);
             out.flush();
-            out.reset();
-
             return in.readObject();
         } catch (Exception e) {
             System.err.println("[SocketManager] Connection error: " + e.getMessage());
+            closeConnection();
             return null;
         }
     }

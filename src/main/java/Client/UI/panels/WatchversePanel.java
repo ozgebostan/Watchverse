@@ -37,7 +37,7 @@ public class WatchversePanel extends JPanel {
     private JPanel centerPanel, centerScreen, eastPanel;
     private CardLayout centerLayout, eastLayout;
     private JLabel detailPoster, detailTitle, detailGenre;
-    private JLabel detailDuration, detailPriority, detailDate;
+    private JLabel detailDuration, detailPriority, detailDate, detailYear;
     private JButton deleteButton;
     private Item currentSelectedItem;
     private JPopupMenu profileMenu;
@@ -81,18 +81,21 @@ public class WatchversePanel extends JPanel {
         groups.setFont(UIConstants.LABEL_FONT);
 
         groupPopMenu = new JPopupMenu();
+        JMenuItem addMyList = new JMenuItem("Add My Watchlist to Group");
         JMenuItem deleteGroup = new JMenuItem("Delete Group");
         JMenuItem createGroupCode = new JMenuItem("Get Group Code");
 
         deleteGroup.setFont(UIConstants.LINK_FONT);
         createGroupCode.setFont(UIConstants.LINK_FONT);
+        addMyList.setFont(UIConstants.LINK_FONT);
 
         groupPopMenu.add(deleteGroup);
         groupPopMenu.add(createGroupCode);
+        groupPopMenu.add(addMyList);
 
 
         //Listeners for group menu items
-        deleteGroup.addActionListener(e -> {
+        deleteGroup.addActionListener(_ -> {
             String selected = groups.getSelectedValue();
             if (selected != null) {
                 new Thread(() -> {
@@ -102,7 +105,7 @@ public class WatchversePanel extends JPanel {
             }
         });
 
-        createGroupCode.addActionListener(e -> {
+        createGroupCode.addActionListener(_ -> {
             String selected = groups.getSelectedValue();
             if (selected != null) {
                 new Thread(() -> {
@@ -112,6 +115,40 @@ public class WatchversePanel extends JPanel {
                                 JOptionPane.showMessageDialog(null, "Group Code: " + res));
                     }
                 }).start();
+            }
+        });
+
+        addMyList.addActionListener(_ -> {
+            String selectedGroup = groups.getSelectedValue();
+            if (selectedGroup != null) {
+                // 1. Kullanıcının kendi listelerini çek
+                Object res = request("GET_WATCHLISTS###" + ClientUserSession.getInstance().getUsername());
+                if (res instanceof List<?> myLists && !myLists.isEmpty()) {
+                    // 2. Seçim kutusu göster
+                    String choice = (String) JOptionPane.showInputDialog(null,
+                            "Select one of your lists to link to '" + selectedGroup + "':",
+                            "Link Watchlist", JOptionPane.QUESTION_MESSAGE, null,
+                            myLists.toArray(), myLists.toArray()[0]);
+
+                    if (choice != null) {
+                        new Thread(() -> {
+                            // 3. Gruba bağlama isteği at
+                            Object status = request("ADD_LIST_TO_GROUP###" +
+                                    ClientUserSession.getInstance().getUsername() +
+                                    "###" + selectedGroup + "###" + choice);
+
+                            if ("SUCCESS".equals(status)) {
+                                JOptionPane.showMessageDialog(null, "List linked successfully!");
+                                // Grubu otomatik yenilemek için tıklamayı tetikle
+                                groups.setSelectedValue(selectedGroup, true);
+                            } else {
+                                String msg = status.toString().contains("PRIVATE") ?
+                                        "Private lists cannot be shared in groups!" : "Error: " + status;
+                                JOptionPane.showMessageDialog(null, msg);
+                            }
+                        }).start();
+                    }
+                }
             }
         });
 
@@ -149,8 +186,8 @@ public class WatchversePanel extends JPanel {
         logoutItem.setFont(UIConstants.LINK_FONT);
         logoutItem.setForeground(UIConstants.LINK_COLOR);
 
-        settingsItem.addActionListener(e -> frame.openSettings());
-        logoutItem.addActionListener(e -> frame.logout());
+        settingsItem.addActionListener(_ -> frame.openSettings());
+        logoutItem.addActionListener(_ -> frame.logout());
         profileMenu.add(settingsItem);
         profileMenu.addSeparator();
         profileMenu.add(logoutItem);
@@ -255,6 +292,37 @@ public class WatchversePanel extends JPanel {
         });
     }
 
+    private void displayWatchlistFolders(List<PublicWatchlist> folders) {
+        SwingUtilities.invokeLater(() -> {
+            centerScreen.removeAll();
+            centerScreen.setLayout(new GridLayout(0, 4, 15, 15));
+
+            if (folders != null && !folders.isEmpty()) {
+                for (PublicWatchlist folder : folders) {
+                    JButton folderBtn = new JButton(folder.name());
+
+                    UIMaker.styleButton(folderBtn, new Dimension(180, 100), UIConstants.ADD_BUTTON_COLOR);
+
+                    folderBtn.addActionListener(_ -> {
+                        new Thread(() -> {
+                            Object res = request("GET_PUBLIC_LIST_ITEMS###" + folder.id());
+                            if (res instanceof List) {
+                                displayItems((List<Item>) res);
+                                currentViewedListId = folder.id();
+                            }
+                        }).start();
+                    });
+                    centerScreen.add(folderBtn);
+                }
+                centerLayout.show(centerPanel, "CONTENT");
+            } else {
+                centerLayout.show(centerPanel, "EMPTY");
+            }
+            centerScreen.revalidate();
+            centerScreen.repaint();
+        });
+    }
+
     private JButton createMovieCard(Item item) {
         //Styling
         JButton card = new JButton();
@@ -279,9 +347,7 @@ public class WatchversePanel extends JPanel {
 
                     if (icon.getIconWidth() > 0) {
                         Image img = icon.getImage().getScaledInstance(200, 230, Image.SCALE_SMOOTH);
-                        SwingUtilities.invokeLater(() -> {
-                            card.setIcon(new ImageIcon(img));
-                        });
+                        SwingUtilities.invokeLater(() -> card.setIcon(new ImageIcon(img)));
                     }
                 } catch (Exception ignore) {
                     //no poster
@@ -293,7 +359,7 @@ public class WatchversePanel extends JPanel {
 
         card.setText(labelText);
 
-        card.addActionListener(e -> {
+        card.addActionListener(_ -> {
             //for details panel after adding item to the list
             if (currentViewedListName != null && !currentViewedListName.isEmpty()) {
                 showItemDetails(item);
@@ -315,6 +381,12 @@ public class WatchversePanel extends JPanel {
 
         String priorityText = (item.priority() == 3) ? "High" : (item.priority() == 2) ? "Medium" : "Low";
         detailPriority.setText("<html><b>Priority:</b> " + priorityText + "</html>");
+
+        String yearText = (item.releaseYear() > 0) ? String.valueOf(item.releaseYear()) : "N/A";
+        detailYear.setText("<html><center><b>Released:</b> " + yearText + "</center></html>");
+
+        String dateText = (item.addedDate() != null) ? item.addedDate() : "Unknown";
+        detailDate.setText("<html><center><font color='gray' size='3'>Added on: " + dateText + "</font></center></html>");
 
         deleteButton.setVisible(currentViewedListId == -1);
 
@@ -390,9 +462,7 @@ public class WatchversePanel extends JPanel {
 
         // Discover
         west.add(Box.createVerticalStrut(30));
-        JPanel discoverHeader = titleWithAdButton("Discover", () -> {
-            System.out.println("Searching public lists...");
-        }, "Search public lists", "", false);
+        JPanel discoverHeader = titleWithAdButton("Discover", () -> System.out.println("Searching public lists..."), "Search public lists", "", false);
 
 
         west.add(discoverHeader);
@@ -488,21 +558,32 @@ public class WatchversePanel extends JPanel {
         itemDetailPanel.add(detailTitle);
         itemDetailPanel.add(Box.createVerticalStrut(10));
         itemDetailPanel.add(detailGenre);
-        itemDetailPanel.add(Box.createVerticalStrut(20));
+        itemDetailPanel.add(Box.createVerticalStrut(10));
 
         detailDuration = new JLabel();
         detailDuration.setAlignmentX(CENTER_ALIGNMENT);
         detailDuration.setForeground(Color.DARK_GRAY);
-        itemDetailPanel.add(detailDuration);
 
         detailPriority = new JLabel();
         detailPriority.setAlignmentX(CENTER_ALIGNMENT);
         detailPriority.setForeground(Color.DARK_GRAY);
-        itemDetailPanel.add(detailPriority);
 
-        detailDate = new JLabel();
+
+        detailYear = new JLabel("", SwingConstants.CENTER);
+        detailYear.setAlignmentX(CENTER_ALIGNMENT);
+        detailYear.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        detailDate = new JLabel("", SwingConstants.CENTER);
         detailDate.setAlignmentX(CENTER_ALIGNMENT);
         detailDate.setForeground(Color.DARK_GRAY);
+
+        itemDetailPanel.add(detailYear);
+        itemDetailPanel.add(Box.createVerticalStrut(10));
+
+        itemDetailPanel.add(detailDuration);
+        itemDetailPanel.add(detailPriority);
+
+        itemDetailPanel.add(Box.createVerticalStrut(20));
         itemDetailPanel.add(detailDate);
 
         itemDetailPanel.add(Box.createVerticalStrut(30));
@@ -525,6 +606,7 @@ public class WatchversePanel extends JPanel {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
         JButton addBtn = new JButton(btnText);
+        addBtn.setForeground(UIConstants.ADD_BUTTON_COLOR);
 
         panel.setMaximumSize(new Dimension(330, 35));
         panel.setPreferredSize(new Dimension(330, 35));
@@ -533,7 +615,7 @@ public class WatchversePanel extends JPanel {
 
         addBtn.setToolTipText(help);
         addBtn.setFocusPainted(false);
-        addBtn.addActionListener(e -> onAdd.run());
+        addBtn.addActionListener(_ -> onAdd.run());
 
         panel.add(titleLabel, BorderLayout.WEST);
         panel.add(addBtn, BorderLayout.EAST);
@@ -578,7 +660,7 @@ public class WatchversePanel extends JPanel {
         UIBehavior.setTextFieldPlaceholder(searchBar, SEARCH_HINT);
         UIBehavior.setTextFieldPlaceholder(discoverSearchBar, "Search public lists...");
 
-        profileButton.addActionListener(e -> {
+        profileButton.addActionListener(_ -> {
             int menuWidth = profileMenu.getPreferredSize().width;
             int x = profileButton.getWidth() - menuWidth;
             int y = profileButton.getHeight();
@@ -602,7 +684,7 @@ public class WatchversePanel extends JPanel {
                     JPopupMenu watchlistMenu = new JPopupMenu();
                     JMenuItem deleteWatchlist = new JMenuItem("Delete List");
                     deleteWatchlist.setFont(UIConstants.LINK_FONT);
-                    deleteWatchlist.addActionListener(ev -> {
+                    deleteWatchlist.addActionListener(_ -> {
                         if (request("DELETE_LIST###" + ClientUserSession.getInstance().getUsername() + "###" + selected).equals("SUCCESS"))
                             refreshWatchlists();
                     });
@@ -612,25 +694,46 @@ public class WatchversePanel extends JPanel {
             }
         });
 
-        // Group Events
+        //group events
         groups.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && groups.getSelectedValue() != null) {
+                // Diğer seçimleri temizle
                 watchlists.clearSelection();
                 publicWatchlists.clearSelection();
 
-                new Thread(() -> {
-                    String groupName = groups.getSelectedValue();
-                    String username = ClientUserSession.getInstance().getUsername();
+                String groupName = groups.getSelectedValue();
+                String username = ClientUserSession.getInstance().getUsername();
 
-                    Object res = request("GET_GROUP_ITEMS###" + username + "###" + groupName);
+                // 1. Önce "Yükleniyor" ekranını göster (Anlık geri bildirim için önemli)
+                centerLayout.show(centerPanel, "LOADING");
+
+                new Thread(() -> {
+                    // Veriyi çek
+                    Object res = request("GET_GROUP_WATCHLISTS_OBJECTS###" + username + "###" + groupName);
 
                     if (res instanceof List) {
-                        SwingUtilities.invokeLater(() -> displayItems((List<Item>) res));
+                        // 2. UI Güncellemesini Swing Thread'ine (EDT) geri gönder
+                        SwingUtilities.invokeLater(() -> {
+                            displayWatchlistFolders((List<PublicWatchlist>) res);
+
+                            // 3. ZORLA YENİDEN ÇİZ (Güncellenmeme sorununu bu çözer)
+                            centerScreen.revalidate();
+                            centerScreen.repaint();
+                            centerPanel.revalidate();
+                            centerPanel.repaint();
+
+                            // 4. İçeriği göster
+                            centerLayout.show(centerPanel, "CONTENT");
+                        });
+                    } else {
+                        // Eğer hata dönerse veya liste boşsa boş ekranı göster
+                        SwingUtilities.invokeLater(() -> centerLayout.show(centerPanel, "EMPTY"));
                     }
                 }).start();
             }
         });
 
+// Sağ tık (Pop-up Menu) kısmı değişmiyor, o doğru çalışıyor
         groups.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -672,8 +775,18 @@ public class WatchversePanel extends JPanel {
             }
         });
 
+        publicWatchlists.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && publicWatchlists.getSelectedValue() != null) {
+                watchlists.clearSelection();
+                groups.clearSelection();
+
+                PublicWatchlist selected = publicWatchlists.getSelectedValue();
+                loadPublicListItems(selected.id(), selected.name());
+            }
+        });
+
         // Delete Button Event
-        deleteButton.addActionListener(e -> {
+        deleteButton.addActionListener(_ -> {
             if (currentSelectedItem == null || currentViewedListName == null) return;
             int confirm = JOptionPane.showConfirmDialog(frame, "Delete '" + currentSelectedItem.title() + "'?", "Confirm", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
@@ -683,6 +796,7 @@ public class WatchversePanel extends JPanel {
                 }
             }
         });
+
     }
 
     private void setComponentStyles() {
@@ -700,4 +814,6 @@ public class WatchversePanel extends JPanel {
         buildCenterPanel();
         buildEastPanel();
     }
+
+
 }

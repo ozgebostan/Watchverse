@@ -32,6 +32,7 @@ public class SettingsDialog extends BaseDialog {
 
         oldPasswordField = new JPasswordField();
         newPasswordField = new JPasswordField();
+        deleteAccountButton = new JButton("Delete Account");
 
         container.setBackground(UIConstants.MAIN_APP_COLOR);
         UIMaker.styleLabel(oldPasswordLabel, Color.BLACK);

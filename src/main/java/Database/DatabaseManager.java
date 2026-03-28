@@ -116,6 +116,8 @@ public class DatabaseManager {
                         poster_url TEXT,
                         priority INTEGER DEFAULT 1, -- 1: Low, 2: Medium, 3: High
                         duration INTEGER DEFAULT 0,
+                        release_year INTEGER,
+                        added_date DATETIME DEFAULT CURRENT_TIMESTAMP,
                         status TEXT DEFAULT 'PLANNING' CHECK(status IN ('WATCHING', 'FINISHED', 'PLANNING')),
                         current_episode INTEGER DEFAULT 0,
                         total_episodes INTEGER DEFAULT 1,
@@ -134,7 +136,7 @@ public class DatabaseManager {
                 connection = DriverManager.getConnection(DB_URL);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Connection error: " + e.getMessage());
         }
         return connection;
     }

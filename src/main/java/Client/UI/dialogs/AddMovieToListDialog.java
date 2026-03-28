@@ -107,7 +107,7 @@ public class AddMovieToListDialog extends BaseDialog {
         }
 
         // ADD_ITEM###USERNAME###LISTNAME###API_ID###TITLE###GENRES###POSTER_URL###PRIORITY###DURATION
-        String cmd = String.format("ADD_ITEM###%s###%s###%s###%s###%s###%s###%s###%s",
+        String cmd = String.format("ADD_ITEM###%s###%s###%s###%s###%s###%s###%s###%s###%s###%s",
                 ClientUserSession.getInstance().getUsername(),
                 selectedListName,
                 movie.title(),
@@ -116,7 +116,8 @@ public class AddMovieToListDialog extends BaseDialog {
                 movie.apiId(),
                 movie.posterUrl(),
                 priorityValue,
-                durationValue
+                durationValue,
+                movie.releaseYear()
         );
 
         Object response = SocketManager.getInstance().sendRequest(cmd);

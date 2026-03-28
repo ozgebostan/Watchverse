@@ -47,7 +47,9 @@ public class ClientHandler implements Runnable {
                     case "REGISTER" -> handleRegister(out, parts);
                     case "ADD_ITEM" -> handleAddItem(out, parts);
                     case "GET_GROUPS" -> sendResponse(out, new ArrayList<String>());
-                    case "GET_GROUP_ITEMS" -> sendResponse(out, new ArrayList<Item>());
+                    case "GET_GROUP_WATCHLISTS_OBJECTS" -> handleGetGroupWatchlistObjects(out, parts);
+                    case "ADD_LIST_TO_GROUP" -> handleAddListToGroup(out, parts);
+                    case "GET_PUBLIC_LIST_ITEMS" -> handleGetPublicListItems(out, parts);
                     case "GET_LIST_ITEMS" -> handleGetItems(out, parts);
                     case "REMOVE_ITEM" -> handleRemoveItem(out, parts);
                     case "CREATE_LIST" -> handleCreateList(out, parts);
@@ -100,7 +102,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleAddItem(ObjectOutputStream out, String[] parts) throws Exception {
-        if (parts.length >= 8) {
+        if (parts.length >= 10) {
             String user = parts[1];
             String list = parts[2];
             String title = parts[3];
@@ -111,16 +113,21 @@ public class ClientHandler implements Runnable {
 
             int priority = 1;
             int duration = 0;
+            int releaseYear = 0;
 
-            if (parts.length >= 10) {
-                try {
-                    priority = Integer.parseInt(parts[8]);
-                    duration = Integer.parseInt(parts[9]);
-                } catch (NumberFormatException ignored) {}
-            }
+            try {
+                priority = Integer.parseInt(parts[8]);
+                duration = Integer.parseInt(parts[9]);
 
-            Item newItem = new Item(title, type, genres, apiId, posterUrl, priority, duration);
+                if (parts.length >= 11) {
+                    releaseYear = Integer.parseInt(parts[10]);
+                }
+            } catch (NumberFormatException ignored) {}
+
+            Item newItem = new Item(title, type, genres, apiId, posterUrl, priority, duration, releaseYear, null);
             sendResponse(out, watchlistService.addItem(user, list, newItem));
+        } else {
+            System.err.println("[SERVER] Missing parameters for ADD_ITEM. Expected 10, got: " + parts.length);
         }
     }
 
@@ -221,6 +228,33 @@ public class ClientHandler implements Runnable {
     private void handleDeleteGroup(ObjectOutputStream out, String[] parts) throws Exception {
         if (parts.length >= 3) {
             sendResponse(out, watchlistService.deleteGroup(parts[1], parts[2]) ? "SUCCESS" : "FAIL");
+        }
+    }
+
+    private void handleGetGroupWatchlistObjects(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 3) {
+            String username = parts[1];
+            String groupName = parts[2];
+            // Service üzerinden PublicWatchlist (ID + Name) listesini çekip yolluyoruz
+            sendResponse(out, watchlistService.getGroupWatchlistObjects(username, groupName));
+        }
+    }
+
+    private void handleAddListToGroup(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 4) {
+            String username = parts[1];
+            String groupName = parts[2];
+            String listName = parts[3];
+            // Service'teki "private kontrolü" olan güvenli metodu çağırıyoruz
+            sendResponse(out, watchlistService.addListToGroup(username, groupName, listName));
+        }
+    }
+
+    private void handleGetPublicListItems(ObjectOutputStream out, String[] parts) throws Exception {
+        if (parts.length >= 2) {
+            int listId = Integer.parseInt(parts[1]);
+            // Watchlist ID'sini kullanarak içindeki filmleri getiriyoruz
+            sendResponse(out, watchlistService.getPublicListItemsById(listId));
         }
     }
 

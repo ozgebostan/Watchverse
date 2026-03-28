@@ -10,15 +10,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Singleton DAO class for managing watchlists, groups, and media items.
  */
 public class WatchlistDAO {
 
-    private final DatabaseManager dbManager;
     private static WatchlistDAO instance;
+    private final DatabaseManager dbManager;
 
     // Private constructor for Singleton
     private WatchlistDAO() {
@@ -67,8 +66,9 @@ public class WatchlistDAO {
         int watchlistId = getWatchlistId(username, listName);
         if (watchlistId == -1) return "ERROR:LIST_NOT_FOUND";
 
-        String sql = "INSERT INTO list_items (watchlist_id, title, content_type, genres, api_id, poster_url, priority, duration, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PLANNING')";
+        String sql = "INSERT INTO list_items (watchlist_id, title, content_type, genres, api_id, " +
+                "poster_url, priority, duration, release_year, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PLANNING')";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -80,6 +80,8 @@ public class WatchlistDAO {
             ps.setString(6, item.posterUrl());
             ps.setInt(7, item.priority());
             ps.setInt(8, item.duration());
+            ps.setInt(9, item.releaseYear());
+
 
             ps.executeUpdate();
             return "SUCCESS";
@@ -96,7 +98,9 @@ public class WatchlistDAO {
         int watchlistId = getWatchlistId(username, listName);
         if (watchlistId == -1) return items;
 
-        String sql = "SELECT title, content_type, genres, api_id, poster_url, priority, duration FROM list_items WHERE watchlist_id = ?";
+        String sql = "SELECT title, content_type, genres, api_id, poster_url, priority, duration, release_year, added_date " +
+                "FROM list_items WHERE watchlist_id = ?";
+
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, watchlistId);
@@ -109,7 +113,9 @@ public class WatchlistDAO {
                             rs.getString("api_id"),
                             rs.getString("poster_url"),
                             rs.getInt("priority"),
-                            rs.getInt("duration")
+                            rs.getInt("duration"),
+                            rs.getInt("release_year"),
+                            rs.getString("added_date")
                     ));
                 }
             }
@@ -179,8 +185,8 @@ public class WatchlistDAO {
 
     public String joinGroup(String username, String code) throws SQLException {
         String findGroupSql = "SELECT id, groupName FROM user_groups WHERE join_code = ?";
-        int groupId = -1;
-        String groupName = "";
+        int groupId;
+        String groupName;
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(findGroupSql)) {
@@ -205,40 +211,40 @@ public class WatchlistDAO {
         }
     }
 
-    public List<String> getGroupWatchlists(String username, String groupName) throws SQLException {
-        List<String> watchlists = new ArrayList<>();
-        String sql = "SELECT w.name FROM watchlists w " +
-                "JOIN group_watchlists gw ON w.id = gw.watchlist_id " +
-                "JOIN user_groups g ON gw.group_id = g.id " +
-                "WHERE g.groupName = ?";
+    public List<PublicWatchlist> getGroupWatchlistObjects(String username, String groupName) throws SQLException {
+        List<PublicWatchlist> lists = new ArrayList<>();
+
+        // SQL: Gruba bağlı olan watchlist'lerin sadece ID ve isimlerini getirir.
+        // Kullanıcının grup üyesi veya sahibi olup olmadığını da kontrol eder.
+        String sql = """
+            SELECT w.id, w.name FROM watchlists w
+            JOIN group_watchlists gw ON w.id = gw.watchlist_id
+            JOIN user_groups g ON gw.group_id = g.id
+            WHERE g.groupName = ? AND (
+                g.owner_id = (SELECT id FROM users WHERE username = ?) OR 
+                EXISTS (SELECT 1 FROM group_members gm WHERE gm.group_id = g.id 
+                        AND gm.user_id = (SELECT id FROM users WHERE username = ?))
+            )""";
+
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, groupName);
+            ps.setString(2, username);
+            ps.setString(3, username);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    watchlists.add(rs.getString("name"));
+                    lists.add(new PublicWatchlist(
+                            rs.getInt("id"),
+                            rs.getString("name")
+                    ));
                 }
             }
         }
-        return watchlists;
+        return lists;
     }
 
-    public boolean addWatchlistToGroup(String username, String groupName, String watchlistName) throws SQLException {
-        int groupId = getGroupId(username, groupName);
-        int watchlistId = getWatchlistId(username, watchlistName);
-
-        if (groupId == -1 || watchlistId == -1) return false;
-
-        String sql = "INSERT INTO group_watchlists (group_id, watchlist_id) VALUES (?, ?)";
-        try (Connection conn = dbManager.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, groupId);
-            ps.setInt(2, watchlistId);
-            return ps.executeUpdate() == 1;
-        } catch (SQLException e) {
-            return false;
-        }
-    }
 
     // --- DISCOVER & SHARED ---
 
@@ -257,8 +263,12 @@ public class WatchlistDAO {
 
     public List<Item> getPublicListItemsById(int listId) {
         List<Item> items = new ArrayList<>();
-        String sql = "SELECT title, content_type, genres, api_id, poster_url, priority, duration FROM list_items WHERE watchlist_id = ?";        try (Connection conn = dbManager.getConnection();
-                                                                                                                                                      PreparedStatement ps = conn.prepareStatement(sql)) {
+        String sql = """
+                SELECT title, content_type, genres, api_id, poster_url, priority, duration, release_year, added_date
+                FROM list_items WHERE watchlist_id = ?""";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, listId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -269,7 +279,9 @@ public class WatchlistDAO {
                             rs.getString("api_id"),
                             rs.getString("poster_url"),
                             rs.getInt("priority"),
-                            rs.getInt("duration")
+                            rs.getInt("duration"),
+                            rs.getInt("release_year"),
+                            rs.getString("added_date")
                     ));
                 }
             }
@@ -294,11 +306,20 @@ public class WatchlistDAO {
     }
 
     private int getGroupId(String username, String groupName) throws SQLException {
-        String sql = "SELECT g.id FROM user_groups g JOIN users u ON g.owner_id = u.id WHERE u.username = ? AND g.groupName = ?";
+        String sql = """
+                SELECT g.id FROM user_groups g 
+                LEFT JOIN group_members gm ON g.id = gm.group_id
+                WHERE g.groupName = ? AND (
+                    g.owner_id = (SELECT id FROM users WHERE username = ?) OR 
+                    gm.user_id = (SELECT id FROM users WHERE username = ?)
+                ) LIMIT 1
+                """;
+
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            ps.setString(2, groupName);
+            ps.setString(1, groupName);
+            ps.setString(2, username);
+            ps.setString(3, username);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt("id") : -1;
             }
@@ -325,19 +346,46 @@ public class WatchlistDAO {
     }
 
     public boolean deleteGroup(String username, String groupName) throws SQLException {
-        int groupId = getGroupId(username, groupName);
-        if (groupId == -1) return false;
+        String sql = """
+                DELETE FROM user_groups WHERE groupName = ? 
+                        AND owner_id = (SELECT id FROM users WHERE username = ?)""";
 
-        String sql = "DELETE FROM user_groups WHERE id = ?";
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, groupId);
+            ps.setString(1, groupName);
+            ps.setString(2, username);
             return ps.executeUpdate() > 0;
         }
     }
 
+    public String addWatchlistToGroup(String username, String groupName, String watchlistName) throws SQLException {
+        int groupId = getGroupId(username, groupName);
+        int watchlistId = getWatchlistId(username, watchlistName);
+
+        if (groupId == -1 || watchlistId == -1) return "ERROR:NOT_FOUND";
+
+        // SQL: Gruba watchlist ekleme
+        String sql = "INSERT INTO group_watchlists (group_id, watchlist_id) VALUES (?, ?)";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, groupId);
+            ps.setInt(2, watchlistId);
+            ps.executeUpdate();
+            return "SUCCESS";
+        } catch (SQLException e) {
+            // SQLite hata kodu 19: UNIQUE constraint failed (zaten ekli demektir)
+            if (e.getErrorCode() == 19 || e.getMessage().contains("UNIQUE")) {
+                return "ERROR:ALREADY_EXISTS";
+            }
+            throw e;
+        }
+    }
     public String getGroupCode(String username, String groupName) throws SQLException {
-        String sql = "SELECT g.join_code FROM user_groups g JOIN users u ON g.owner_id = u.id WHERE u.username = ? AND g.groupName = ?";
+        String sql = "SELECT g.join_code FROM user_groups g " +
+                "JOIN users u ON g.owner_id = u.id " +
+                "WHERE u.username = ? AND g.groupName = ?";
+
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);

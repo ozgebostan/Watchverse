@@ -51,8 +51,8 @@ public abstract class BaseDialog extends JDialog {
         styleButton(confirmButton, UIConstants.ADD_BUTTON_COLOR);
         styleButton(cancelButton, Color.GRAY);
 
-        cancelButton.addActionListener(e -> dispose());
-        confirmButton.addActionListener(e -> onConfirm());
+        cancelButton.addActionListener(_ -> dispose());
+        confirmButton.addActionListener(_ -> onConfirm());
 
         buttonPanel.add(cancelButton);
         buttonPanel.add(confirmButton);

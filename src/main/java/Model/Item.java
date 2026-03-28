@@ -11,7 +11,9 @@ public record Item(
         String apiId,
         String posterUrl,
         int priority, // 1: Low, 2: Medium, 3: High
-        int duration  // Minutes
+        int duration,  // Minutes
+        int releaseYear,
+        String addedDate
 ) implements Serializable {
 
     @Serial
@@ -24,7 +26,7 @@ public record Item(
     }
 
     public Item withRealDuration(int realDuration) {
-        return new Item(title, type, genres, apiId, posterUrl, priority, realDuration);
+        return new Item(title, type, genres, apiId, posterUrl, priority, realDuration, releaseYear, addedDate);
     }
     @Override
     public boolean equals(Object o) {
