@@ -29,13 +29,13 @@ Watchverse is a full-stack, multi-user media tracking and social interaction pla
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="C:\Users\ozgeb\OneDrive\Resimler\Screenshots\Login.png" width="400" title="Login">
-  <img src="C:\Users\ozgeb\OneDrive\Resimler\Screenshots\Main App.png" width="400" title="Main Dashboard">
-  <img src="C:\Users\ozgeb\OneDrive\Resimler\Screenshots\InWatchlist.png" width="400" title="In Watchlist">
-  <img src="C:\Users\ozgeb\OneDrive\Resimler\Screenshots\InWatchlist.png" width="400" title="In Watchlist">
-  <img src="C:\Users\ozgeb\OneDrive\Resimler\Screenshots\Searching.png" width="400" title=" Searching">
-  <img src="C:\Users\ozgeb\OneDrive\Resimler\Screenshots\AddingToList.png" width="400" title="Adding Dialog">
-  <img src="C:\Users\ozgeb\OneDrive\Resimler\Screenshots\InGroup.png" width="400" title="In Group">
+  <img src="screenshots/Login.png" width="400" title="Login">
+  <img src="screenshots/SignUp.png" width="400" title="Sign Up">
+  <img src="screenshots/MainApp.png" width="400" title="Main Dashboard">
+  <img src="screenshots/InWatchlist.png" width="400" title="In Watchlist">
+  <img src="screenshots/Searching.png" width="400" title="Searching">
+  <img src="screenshots/AddingToList.png" width="400" title="Adding Dialog">
+  <img src="screenshots/InGroup.png" width="400" title="In Group">
 </p>
 <p align="center">
 </p>
