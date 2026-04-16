@@ -8,7 +8,6 @@ import Model.ClientUserSession;
 import javax.swing.*;
 import java.awt.*;
 
-import static Client.UI.utils.UIConstants.FIELD_FONT;
 
 public class AddWatchlist extends BaseDialog {
 
@@ -22,7 +21,8 @@ public class AddWatchlist extends BaseDialog {
 
     @Override
     protected void addContent(Container container) {
-        JLabel nameLabel = new JLabel("Watchlist Name:");
+        //elements of the dialog
+        JLabel watchlistNameLabel = new JLabel("Watchlist Name:");
         watchlistNameField = new JTextField();
 
         JLabel typeLabel = new JLabel("Visibility Type:");
@@ -30,31 +30,45 @@ public class AddWatchlist extends BaseDialog {
         typeBox.setFont(UIConstants.LABEL_FONT);
 
 
-        nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        watchlistNameField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        typeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        //Wrappers that will be used in add watchlist dialog
+        JPanel compWrapper = new JPanel();
+        compWrapper.setOpaque(false);
+        compWrapper.setLayout(new BoxLayout(compWrapper, BoxLayout.Y_AXIS));
+
+        //watchlist name wrapper
+        JPanel watchlistNameWrapper = new JPanel();
+        watchlistNameWrapper.setOpaque(false);
+        watchlistNameWrapper.setLayout(new BoxLayout(watchlistNameWrapper, BoxLayout.X_AXIS));
+
+        UIMaker.styleLabel(watchlistNameLabel, Color.BLACK);
+        UIMaker.styleField(watchlistNameField, false);
+
+        watchlistNameWrapper.add(watchlistNameLabel);
+        watchlistNameWrapper.add(Box.createHorizontalStrut(10));
+        watchlistNameWrapper.add(watchlistNameField);
+
+
+        //watchlist type wrapper
+        JPanel typeWrapper = new JPanel();
+        typeWrapper.setOpaque(false);
+        typeWrapper.setLayout(new BoxLayout(typeWrapper, BoxLayout.X_AXIS));
+
         typeBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-
-        UIMaker.styleLabel(nameLabel, Color.BLACK);
-
-        watchlistNameField.setFont(FIELD_FONT);
-        watchlistNameField.setMaximumSize(new Dimension(152, 35));
         UIMaker.styleLabel(typeLabel, Color.BLACK);
 
-        typeBox.setMaximumSize(new Dimension(152, 35));
+        typeBox.setMaximumSize(UIConstants.COMP_SIZE);
         typeBox.setBackground(Color.WHITE);
 
+        typeWrapper.add(typeLabel);
+        typeWrapper.add(Box.createHorizontalStrut(10));
+        typeWrapper.add(typeBox);
+
+        compWrapper.add(watchlistNameWrapper);
+        compWrapper.add(Box.createVerticalStrut(15));
+        compWrapper.add(typeWrapper);
+
         container.setBackground(UIConstants.MAIN_APP_COLOR);
-        container.add(nameLabel);
-        container.add(Box.createVerticalStrut(6));
-        container.add(watchlistNameField);
-
-        container.add(Box.createVerticalStrut(20));
-
-        container.add(typeLabel);
-        container.add(Box.createVerticalStrut(6));
-        container.add(typeBox);
+        container.add(compWrapper);
 
         container.add(Box.createVerticalStrut(20));
     }

@@ -22,18 +22,20 @@ public class AddGroup extends BaseDialog {
         JLabel nameLabel = new JLabel("Group Name:");
         groupName = new JTextField();
 
-        nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        groupName.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        JPanel groupWrapper = new JPanel();
+        groupWrapper.setOpaque(false);
+        groupWrapper.setLayout(new BoxLayout(groupWrapper, BoxLayout.X_AXIS));
+        groupWrapper.add(nameLabel);
+        groupWrapper.add(Box.createHorizontalStrut(10));
+        groupWrapper.add(groupName);
 
         UIMaker.styleLabel(nameLabel, Color.BLACK);
         UIMaker.styleField(groupName, false);
 
         container.setBackground(UIConstants.MAIN_APP_COLOR);
         container.add(Box.createVerticalGlue());
-        container.add(nameLabel);
-        container.add(Box.createVerticalStrut(10));
-        container.add(groupName);
+        container.add(groupWrapper);
         container.add(Box.createVerticalGlue());
     }
 
